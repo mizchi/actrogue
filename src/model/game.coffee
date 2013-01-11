@@ -10,22 +10,26 @@ _module_ 'App.Model', (App, Model)->
           set : (val) => @set key, val
 
   class @Entity extends @Base
-    defaults:
+    defaults: ->
       x: 0
       y: 0
-      cnt: 0
+
+    constructor: ->
+      super
+      @cnt = 0
+      App.game.on 'enterframe', =>
+        @cnt++
 
   class @Bullet extends @Entity
-    defaults:
-      x: 0
-      y: 0
-      rad: 0
-      speed: 10
+    defaults: ->
+      _.extend super,
+        rad: 0
+        move_speed: 10
 
     constructor: ({rad}) ->
       super
-      @x_speed = ~~(cos(rad) * @speed)
-      @y_speed = ~~(sin(rad) * @speed)
+      @x_speed = ~~(cos(rad) * @move_speed)
+      @y_speed = ~~(sin(rad) * @move_speed)
 
     initialize: ->
       App.game.on 'enterframe', =>
@@ -33,12 +37,18 @@ _module_ 'App.Model', (App, Model)->
         @y = @y + @y_speed
 
   class @Player extends @Entity
-    defaults:
-      x: 0
-      y: 0
-      move_speed: 10
+    defaults: ->
+      _.extend super,
+        move_speed: 10
 
     initialize: =>
+      App.game.on 'enterframe', =>
+        {up,down,right,left,w,a,s,d} = App.input
+        if up or w    then @moveBy 0, -@move_speed
+        if down or s  then @moveBy 0, +@move_speed
+        if right or d then @moveBy +@move_speed, 0
+        if left or a  then @moveBy -@move_speed, 0
+
       @on 'click_left', ({x, y}) =>
         bullet_model = new Model.Bullet
           x: @x
@@ -46,6 +56,10 @@ _module_ 'App.Model', (App, Model)->
           rad: atan2(y - @y, x - @x)
         bullet = new App.View.Bullet(bullet_model)
         App.Scene.Field.board.addChild bullet
+
+    moveBy: (dx, dy)->
+      @x += dx
+      @y += dy
 
   class ObjectCollection extends Backbone.Collection
     model: Model.Entity
@@ -57,15 +71,3 @@ _module_ 'App.Model', (App, Model)->
       Game.input = App.instance.input
       @player = new Model.Player
       @objects = new ObjectCollection []
-
-      @on 'enterframe', =>
-        @move_speed = @player.move_speed
-        {up,down,right,left,w,a,s,d} = App.input
-        if up or w    then @moveBy 0, -@move_speed
-        if down or s  then @moveBy 0, +@move_speed
-        if right or d then @moveBy +@move_speed, 0
-        if left or a  then @moveBy -@move_speed, 0
-
-    moveBy: (dx, dy)->
-      @player.x += dx
-      @player.y += dy

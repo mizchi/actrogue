@@ -156,15 +156,21 @@ _module_('App.Model', function(App, Model) {
 
     __extends(Entity, _super);
 
-    function Entity() {
-      return Entity.__super__.constructor.apply(this, arguments);
-    }
-
-    Entity.prototype.defaults = {
-      x: 0,
-      y: 0,
-      cnt: 0
+    Entity.prototype.defaults = function() {
+      return {
+        x: 0,
+        y: 0
+      };
     };
+
+    function Entity() {
+      var _this = this;
+      Entity.__super__.constructor.apply(this, arguments);
+      this.cnt = 0;
+      App.game.on('enterframe', function() {
+        return _this.cnt++;
+      });
+    }
 
     return Entity;
 
@@ -173,19 +179,19 @@ _module_('App.Model', function(App, Model) {
 
     __extends(Bullet, _super);
 
-    Bullet.prototype.defaults = {
-      x: 0,
-      y: 0,
-      rad: 0,
-      speed: 10
+    Bullet.prototype.defaults = function() {
+      return _.extend(Bullet.__super__.defaults.apply(this, arguments), {
+        rad: 0,
+        move_speed: 10
+      });
     };
 
     function Bullet(_arg) {
       var rad;
       rad = _arg.rad;
       Bullet.__super__.constructor.apply(this, arguments);
-      this.x_speed = ~~(cos(rad) * this.speed);
-      this.y_speed = ~~(sin(rad) * this.speed);
+      this.x_speed = ~~(cos(rad) * this.move_speed);
+      this.y_speed = ~~(sin(rad) * this.move_speed);
     }
 
     Bullet.prototype.initialize = function() {
@@ -208,14 +214,30 @@ _module_('App.Model', function(App, Model) {
       return Player.__super__.constructor.apply(this, arguments);
     }
 
-    Player.prototype.defaults = {
-      x: 0,
-      y: 0,
-      move_speed: 10
+    Player.prototype.defaults = function() {
+      return _.extend(Player.__super__.defaults.apply(this, arguments), {
+        move_speed: 10
+      });
     };
 
     Player.prototype.initialize = function() {
       var _this = this;
+      App.game.on('enterframe', function() {
+        var a, d, down, left, right, s, up, w, _ref;
+        _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
+        if (up || w) {
+          _this.moveBy(0, -_this.move_speed);
+        }
+        if (down || s) {
+          _this.moveBy(0, +_this.move_speed);
+        }
+        if (right || d) {
+          _this.moveBy(+_this.move_speed, 0);
+        }
+        if (left || a) {
+          return _this.moveBy(-_this.move_speed, 0);
+        }
+      });
       return this.on('click_left', function(_arg) {
         var bullet, bullet_model, x, y;
         x = _arg.x, y = _arg.y;
@@ -227,6 +249,11 @@ _module_('App.Model', function(App, Model) {
         bullet = new App.View.Bullet(bullet_model);
         return App.Scene.Field.board.addChild(bullet);
       });
+    };
+
+    Player.prototype.moveBy = function(dx, dy) {
+      this.x += dx;
+      return this.y += dy;
     };
 
     return Player;
@@ -250,35 +277,12 @@ _module_('App.Model', function(App, Model) {
     __extends(Game, _super);
 
     function Game() {
-      var _this = this;
       Game.__super__.constructor.apply(this, arguments);
       App.game = this;
       Game.input = App.instance.input;
       this.player = new Model.Player;
       this.objects = new ObjectCollection([]);
-      this.on('enterframe', function() {
-        var a, d, down, left, right, s, up, w, _ref;
-        _this.move_speed = _this.player.move_speed;
-        _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
-        if (up || w) {
-          _this.moveBy(0, -_this.move_speed);
-        }
-        if (down || s) {
-          _this.moveBy(0, +_this.move_speed);
-        }
-        if (right || d) {
-          _this.moveBy(+_this.move_speed, 0);
-        }
-        if (left || a) {
-          return _this.moveBy(-_this.move_speed, 0);
-        }
-      });
     }
-
-    Game.prototype.moveBy = function(dx, dy) {
-      this.player.x += dx;
-      return this.player.y += dy;
-    };
 
     return Game;
 
