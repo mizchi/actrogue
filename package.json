@@ -7,7 +7,7 @@
   "jam": {
      "packageDir": "vendor",
      "dependencies": {
-        "enchantjs": "0.6.2",
+        "enchantjs": null,
         "underscore": null
       }
   },
