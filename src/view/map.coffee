@@ -1,6 +1,4 @@
 _module_ "App.View", (App, View) ->
-  @CELL_SIZE = 24
-
   class @Map extends enchant.Group
     Field = App.Scene.Field
     CELL_SIZE = View.CELL_SIZE
@@ -20,6 +18,8 @@ _module_ "App.View", (App, View) ->
             @drawTile tile
 
     drawTile: (tile) ->
+      # color = if tile.param < 0.5
+
       Field.board.addChild new App.Object.Square(
         tile.x * CELL_SIZE ,tile.y * CELL_SIZE ,
         CELL_SIZE, CELL_SIZE, '#ccc'

@@ -4,8 +4,8 @@ _module_ "App.Model", (App) ->
 
   class @Layer
     constructor: ->
-      @width = 4
-      @height = 3
+      @width = 12
+      @height = 8
       @tiles =
         for i in [0...(@width * @height)]
           x = i%@width

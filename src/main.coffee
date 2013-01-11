@@ -1,12 +1,16 @@
 _module_ "App", (App) ->
   @instance = null
   @input = null
+  @game = null
 
   class @Core extends enchant.Core
     constructor: ->
       super
+
       App.instance = @
       App.input = @input
+      App.game = new App.Model.Game
+
       @fps = 30
 
       @keybind('W'.charCodeAt(0), 'w')

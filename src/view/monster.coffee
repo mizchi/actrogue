@@ -6,5 +6,7 @@ _module_ "App.View", (App, View) ->
       @draw()
 
     draw: ->
-      @addChild new App.Object.Circle 0, 0, 20, "red"
-
+      @addChild new App.Object.Circle 0, 0, 8, "red"
+      label = new Label @model.cid
+      label.x = - 8
+      @addChild label

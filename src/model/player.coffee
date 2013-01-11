@@ -4,7 +4,7 @@ _module_ 'App.Model', (App, Model)->
   class @Player extends @Entity
     defaults: ->
       _.extend super,
-        move_speed: 10
+        move_speed: 0.5
 
     initialize: =>
       App.game.on 'enterframe', =>
@@ -16,7 +16,7 @@ _module_ 'App.Model', (App, Model)->
 
       @on 'click_left', ({x, y}) =>
         @registerEvent =>
-          App.game.objects.add new Model.Bullet
+          App.game.objectList.add new Model.Bullet
             x: @x
             y: @y
             rad: atan2(y - @y, x - @x)

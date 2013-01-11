@@ -7,5 +7,4 @@ _module_ "App.View", (App, View) ->
       @draw()
 
     draw: ->
-      @addChild new App.Object.Circle 0, 0, 20
-
+      @addChild new App.Object.Circle 0, 0, 8
