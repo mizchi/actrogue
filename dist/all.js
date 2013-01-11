@@ -128,7 +128,7 @@ var __hasProp = {}.hasOwnProperty,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 _module_('App.Model', function(App, Model) {
-  var ObjectCollection, abs, atan2, cos, sin;
+  var ObjectList, abs, atan2, cos, sin;
   abs = Math.abs, sin = Math.sin, cos = Math.cos, atan2 = Math.atan2;
   this.Base = (function(_super) {
 
@@ -172,6 +172,12 @@ _module_('App.Model', function(App, Model) {
       });
     }
 
+    Entity.prototype.registerEvent = function(f) {
+      return App.game.once('enterframe', function() {
+        return f();
+      });
+    };
+
     return Entity;
 
   })(this.Base);
@@ -198,8 +204,21 @@ _module_('App.Model', function(App, Model) {
       var _this = this;
       return App.game.on('enterframe', function() {
         _this.x = _this.x + _this.x_speed;
-        return _this.y = _this.y + _this.y_speed;
+        _this.y = _this.y + _this.y_speed;
+        if (_this.isExpired()) {
+          return _this.registerEvent(function() {
+            return App.game.objects.remove(this);
+          });
+        }
       });
+    };
+
+    Bullet.prototype.within = function(other) {
+      return abs(this.x - other.x) < this.size && abs(this.y - other.y) < this.size;
+    };
+
+    Bullet.prototype.isExpired = function() {
+      return this.cnt > App.instance.fps * 1;
     };
 
     return Bullet;
@@ -239,15 +258,15 @@ _module_('App.Model', function(App, Model) {
         }
       });
       return this.on('click_left', function(_arg) {
-        var bullet, bullet_model, x, y;
+        var x, y;
         x = _arg.x, y = _arg.y;
-        bullet_model = new Model.Bullet({
-          x: _this.x,
-          y: _this.y,
-          rad: atan2(y - _this.y, x - _this.x)
+        return _this.registerEvent(function() {
+          return App.game.objects.add(new Model.Bullet({
+            x: _this.x,
+            y: _this.y,
+            rad: atan2(y - _this.y, x - _this.x)
+          }));
         });
-        bullet = new App.View.Bullet(bullet_model);
-        return App.Scene.Field.board.addChild(bullet);
       });
     };
 
@@ -259,17 +278,17 @@ _module_('App.Model', function(App, Model) {
     return Player;
 
   })(this.Entity);
-  ObjectCollection = (function(_super) {
+  ObjectList = (function(_super) {
 
-    __extends(ObjectCollection, _super);
+    __extends(ObjectList, _super);
 
-    function ObjectCollection() {
-      return ObjectCollection.__super__.constructor.apply(this, arguments);
+    function ObjectList() {
+      return ObjectList.__super__.constructor.apply(this, arguments);
     }
 
-    ObjectCollection.prototype.model = Model.Entity;
+    ObjectList.prototype.model = Model.Entity;
 
-    return ObjectCollection;
+    return ObjectList;
 
   })(Backbone.Collection);
   return this.Game = (function(_super) {
@@ -281,7 +300,7 @@ _module_('App.Model', function(App, Model) {
       App.game = this;
       Game.input = App.instance.input;
       this.player = new Model.Player;
-      this.objects = new ObjectCollection([]);
+      this.objects = new ObjectList([]);
     }
 
     return Game;
@@ -433,7 +452,8 @@ _module_("App.Scene", function(App, Scene) {
       this.spawnMonster();
       this.setupMouse();
       this.on('enterframe', function() {
-        return _this.game.trigger('enterframe');
+        _this.game.trigger('enterframe');
+        return _this.draw();
       });
       this.on('touchstart', function(e) {
         var x, y;
@@ -449,7 +469,26 @@ _module_("App.Scene", function(App, Scene) {
         _this.mouse.x = e.x;
         return _this.mouse.y = e.y;
       });
+      this.game.objects.on('add', function(model) {
+        if (model instanceof App.Model.Bullet) {
+          return _this.board.addChild(new App.View.Bullet(model));
+        }
+      });
+      this.game.objects.on('remove', function(model) {
+        var object, _i, _len, _ref, _results;
+        _ref = _this.board.childNodes;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          object = _ref[_i];
+          if (objects.model === model) {
+            _results.push(_this.board.removeChild(object));
+          }
+        }
+        return _results;
+      });
     }
+
+    Field.prototype.draw = function() {};
 
     Field.prototype.setupMap = function() {
       var map_renderer;
@@ -489,11 +528,6 @@ _module_("App.Scene", function(App, Scene) {
         _results.push(this.board.addChild(new App.View.Monster(~~x, ~~y)));
       }
       return _results;
-    };
-
-    Field.prototype.moveBy = function(dx, dy) {
-      this.board.x -= dx;
-      return this.board.y -= dy;
     };
 
     return Field;
@@ -661,8 +695,6 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.View", function(App, View) {
-  var Field;
-  Field = App.Scene.Field;
   return this.Player = (function(_super) {
 
     __extends(Player, _super);

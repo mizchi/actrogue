@@ -20,6 +20,9 @@ _module_ 'App.Model', (App, Model)->
       App.game.on 'enterframe', =>
         @cnt++
 
+    registerEvent: (f) ->
+      App.game.once 'enterframe', -> f()
+
   class @Bullet extends @Entity
     defaults: ->
       _.extend super,
@@ -35,6 +38,15 @@ _module_ 'App.Model', (App, Model)->
       App.game.on 'enterframe', =>
         @x = @x + @x_speed
         @y = @y + @y_speed
+        if @isExpired()
+          @registerEvent ->
+            App.game.objects.remove(@)
+
+    within: (other) ->
+      abs(@x - other.x) < @size and abs(@y - other.y) < @size
+
+    isExpired: ->
+      @cnt > App.instance.fps * 1
 
   class @Player extends @Entity
     defaults: ->
@@ -50,18 +62,17 @@ _module_ 'App.Model', (App, Model)->
         if left or a  then @moveBy -@move_speed, 0
 
       @on 'click_left', ({x, y}) =>
-        bullet_model = new Model.Bullet
-          x: @x
-          y: @y
-          rad: atan2(y - @y, x - @x)
-        bullet = new App.View.Bullet(bullet_model)
-        App.Scene.Field.board.addChild bullet
+        @registerEvent =>
+          App.game.objects.add new Model.Bullet
+            x: @x
+            y: @y
+            rad: atan2(y - @y, x - @x)
 
     moveBy: (dx, dy)->
       @x += dx
       @y += dy
 
-  class ObjectCollection extends Backbone.Collection
+  class ObjectList extends Backbone.Collection
     model: Model.Entity
 
   class @Game extends Backbone.Model
@@ -70,4 +81,4 @@ _module_ 'App.Model', (App, Model)->
       App.game = @
       Game.input = App.instance.input
       @player = new Model.Player
-      @objects = new ObjectCollection []
+      @objects = new ObjectList []

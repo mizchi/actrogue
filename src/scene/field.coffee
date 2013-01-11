@@ -13,6 +13,7 @@ _module_ "App.Scene", (App, Scene) ->
 
       @on 'enterframe', =>
         @game.trigger 'enterframe'
+        @draw()
 
       @on 'touchstart', (e) =>
         x = @player.x + @mouse.x - App.instance.width/2
@@ -25,6 +26,16 @@ _module_ "App.Scene", (App, Scene) ->
         @mouse.x = e.x
         @mouse.y = e.y
 
+      @game.objects.on 'add', (model) =>
+        if model instanceof App.Model.Bullet
+          @board.addChild new App.View.Bullet(model)
+
+      @game.objects.on 'remove', (model) =>
+        for object in @board.childNodes when objects.model is model
+          @board.removeChild object
+
+    draw: ->
+
     setupMap: ->
       map_renderer = new App.View.Map()
       @board.addChild map_renderer
@@ -32,6 +43,7 @@ _module_ "App.Scene", (App, Scene) ->
     setupPlayer: ->
       @player = new App.View.Player(0, 0)
       @board.addChild @player
+      # カメラ中央合わせ
       @player.model.on 'change:x change:y', (model) =>
         @board.x = App.instance.width/2 - model.x
         @board.y = App.instance.height/2 - model.y
@@ -52,8 +64,4 @@ _module_ "App.Scene", (App, Scene) ->
         x = Math.random() * App.instance.width
         y = Math.random() * App.instance.height
         @board.addChild new App.View.Monster(~~x, ~~y)
-
-    moveBy: (dx, dy)->
-      @board.x -= dx
-      @board.y -= dy
 
