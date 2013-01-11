@@ -36,6 +36,9 @@ _module_ "App.Object", (App) ->
       super
       @width = width
       @height = height
+      @x = x
+      @y = y
+
       @fixOffset()
 
       surface = new enchant.Surface(@width, @height)
