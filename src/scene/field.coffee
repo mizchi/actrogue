@@ -5,28 +5,27 @@ _module_ "App.Scene", (App, Scene) ->
       @x += App.instance.width/2
       @y += App.instance.height/2
       Scene.Field.board = @
-      @setupMap()
 
       @objectList.on 'add', (model) =>
         if model instanceof App.Model.Bullet
           @addChild new App.View.Bullet(model)
-
         else if model instanceof App.Model.Monster
           @addChild new App.View.Monster(model)
 
       @objectList.on 'remove', (model) =>
-        p 'remove', model.cid
         target = _.find @childNodes, (node) => node.model is model
-        target?.remove()
-
-    setupMap: ->
-      map_renderer = new App.View.Map()
-      @addChild map_renderer
+        if target?
+          target.remove()
+          target.model?.off()
+          App.game.off(null, null, target)
 
     registerCamera: (view) ->
+      do fixCamera = =>
+        @x = App.instance.width/2 - view.model.x * App.VIEW_SCALE
+        @y = App.instance.height/2 - view.model.y * App.VIEW_SCALE
+
       view.model.on 'change:x change:y', (model) =>
-        @x = App.instance.width/2 - model.x * App.VIEW_SCALE
-        @y = App.instance.height/2 - model.y * App.VIEW_SCALE
+        fixCamera()
 
   class @Field extends enchant.Scene
     @board = null
@@ -35,11 +34,13 @@ _module_ "App.Scene", (App, Scene) ->
       @game = App.game
 
       @setupBoard()
+      @setupMap()
       @setupPlayer()
       @setupMouse()
 
       @on 'enterframe', =>
-        @game.trigger 'enterframe'
+        floor = App.Model.currentFloor()
+        floor.trigger 'enterframe'
 
       @on 'touchstart', (e) =>
         x = @player.x + @mouse.x - App.instance.width/2
@@ -52,15 +53,19 @@ _module_ "App.Scene", (App, Scene) ->
       @on 'touchend', (e) =>
       @on 'touchmove', (e) =>
 
-      @game.spawn()
+    setupMap: ->
+      map = new App.View.Map()
+      Scene.Field.map = map
+      @board.addChild map
 
     setupPlayer: ->
-      @player = new App.View.Player(0, 0)
+      @player = new App.View.Player
       @board.addChild @player
       @board.registerCamera(@player)
 
     setupBoard: ->
-      @board = new ObjectBoard @game.objectList
+      floor = App.Model.currentFloor()
+      @board = new ObjectBoard floor.objectList
       @addChild @board
 
     setupMouse: ->

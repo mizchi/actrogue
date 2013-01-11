@@ -18,9 +18,8 @@ _module_ "App.View", (App, View) ->
             @drawTile tile
 
     drawTile: (tile) ->
-      # color = if tile.param < 0.5
-
-      Field.board.addChild new App.Object.Square(
+      color = if tile.passable then '#eee' else '#888'
+      @addChild new App.Object.Square(
         tile.x * CELL_SIZE ,tile.y * CELL_SIZE ,
-        CELL_SIZE, CELL_SIZE, '#ccc'
+        CELL_SIZE, CELL_SIZE, color
         )

@@ -6,7 +6,8 @@ _module_ 'App.Model', (App, Model)->
         hp: 2
 
     initialize: =>
-      @objectList = App.game.objectList
+      floor = App.Model.currentFloor()
+      @objectList = floor.objectList
 
       @on 'hit', (other) =>
         @set hp: @hp - 1

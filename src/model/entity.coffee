@@ -15,8 +15,11 @@ _module_ 'App.Model', (App, Model)->
     constructor: ->
       super
       @cnt = 0
-      App.game.on 'enterframe', =>
+
+      floor = App.Model.currentFloor()
+      floor.on 'enterframe', =>
         @cnt++
 
     registerEvent: (f) ->
-      App.game.once 'enterframe', -> f()
+      floor = App.Model.currentFloor()
+      floor.once 'enterframe', -> f()

@@ -116,16 +116,20 @@ _module_('App.Model', function(App, Model) {
     };
 
     function Entity() {
-      var _this = this;
+      var floor,
+        _this = this;
       Entity.__super__.constructor.apply(this, arguments);
       this.cnt = 0;
-      App.game.on('enterframe', function() {
+      floor = App.Model.currentFloor();
+      floor.on('enterframe', function() {
         return _this.cnt++;
       });
     }
 
     Entity.prototype.registerEvent = function(f) {
-      return App.game.once('enterframe', function() {
+      var floor;
+      floor = App.Model.currentFloor();
+      return floor.once('enterframe', function() {
         return f();
       });
     };
@@ -218,13 +222,15 @@ _module_('App.Model', function(App, Model) {
     }
 
     Bullet.prototype.initialize = function() {
-      var _this = this;
-      this.objectList = App.game.objectList;
-      return App.game.on('enterframe', function() {
+      var floor,
+        _this = this;
+      floor = App.Model.currentFloor();
+      this.objectList = floor.objectList;
+      return floor.on('enterframe', function() {
         var t;
         if (_this.isExpired()) {
           _this.registerEvent(function() {
-            return App.game.objectList.remove(_this);
+            return _this.objectList.remove(_this);
           });
           return;
         }
@@ -255,62 +261,125 @@ _module_('App.Model', function(App, Model) {
   })(this.Entity);
 });
 
-var __hasProp = {}.hasOwnProperty,
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_('App.Model', function(App, Model) {
-  var ObjectList;
-  ObjectList = (function(_super) {
+  this.Floor = (function(_super) {
 
-    __extends(ObjectList, _super);
+    __extends(Floor, _super);
 
-    function ObjectList() {
-      return ObjectList.__super__.constructor.apply(this, arguments);
+    function Floor() {
+      this.spawn = __bind(this.spawn, this);
+
+      this.enterframe = __bind(this.enterframe, this);
+      Floor.__super__.constructor.apply(this, arguments);
+      this.player = null;
+      this.objectList = new Model.ObjectList([]);
+      this.on('enterframe', this.enterframe);
     }
 
-    ObjectList.prototype.model = Model.Entity;
+    Floor.prototype.enterframe = function() {
+      return this.spawn();
+    };
 
-    return ObjectList;
+    Floor.prototype.spawn = function() {
+      var models, x, y,
+        _this = this;
+      models = this.objectList.select(function(model) {
+        return model instanceof App.Model.Monster;
+      });
+      if (models.length < 10) {
+        x = Math.random() * 10;
+        y = Math.random() * 10;
+        return this.objectList.push(new App.Model.Monster({
+          x: x,
+          y: y
+        }));
+      }
+    };
 
-  })(Backbone.Collection);
-  return this.Game = (function(_super) {
+    Floor.prototype.join = function(player) {
+      this.player = player;
+      return this.objectList.add(this.player);
+    };
+
+    Floor.prototype.leave = function(player) {
+      this.objectList.remove(player);
+      return this.player = null;
+    };
+
+    return Floor;
+
+  })(Backbone.Model);
+  this.currentFloor = function() {
+    return App.game.floors[App.game.depth];
+  };
+  this.Game = (function(_super) {
 
     __extends(Game, _super);
 
     function Game() {
       Game.__super__.constructor.apply(this, arguments);
       App.game = this;
+      this.floors = [];
+      this.floors.push(new Model.Floor);
+      this.depth = 0;
       this.player = new Model.Player;
-      this.objectList = new ObjectList([]);
-      this.spawn();
+      this.currentFloor().join(this.player);
     }
 
-    Game.prototype.spawn = function() {
-      var i, x, y, _i, _results;
-      _results = [];
-      for (i = _i = 0; _i < 10; i = ++_i) {
-        x = Math.random() * 10;
-        y = Math.random() * 10;
-        _results.push(this.objectList.add(new Model.Monster({
-          x: x,
-          y: y
-        })));
-      }
-      return _results;
+    Game.prototype.currentFloor = function() {
+      return this.floors[this.depth];
+    };
+
+    Game.currentFloor = function() {
+      return App.game.floors[App.game.depth];
     };
 
     return Game;
 
   })(Backbone.Model);
+  return this.ObjectList = (function(_super) {
+
+    __extends(ObjectList, _super);
+
+    ObjectList.prototype.model = Model.Entity;
+
+    function ObjectList() {
+      ObjectList.__super__.constructor.apply(this, arguments);
+    }
+
+    return ObjectList;
+
+  })(Backbone.Collection);
 });
 
 
 _module_("App.Model", function(App) {
+  this.Map = (function() {
+
+    function Map() {
+      Map.__super__.constructor.apply(this, arguments);
+      this.layers = [];
+      this.layers[0] = new App.Model.Layer;
+      this.render();
+    }
+
+    Map.prototype.bottom = function() {
+      return this.layers[0];
+    };
+
+    return Map;
+
+  })();
   this.Tile = (function() {
 
     function Tile(x, y) {
       this.x = x;
       this.y = y;
+      this.passable = true;
     }
 
     return Tile;
@@ -319,16 +388,18 @@ _module_("App.Model", function(App) {
   return this.Layer = (function() {
 
     function Layer() {
-      var i, x, y;
-      this.width = 12;
-      this.height = 8;
+      var i, tile, x, y;
+      this.width = 30;
+      this.height = 24;
       this.tiles = (function() {
         var _i, _ref, _results;
         _results = [];
         for (i = _i = 0, _ref = this.width * this.height; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
           x = i % this.width;
           y = ~~(i / this.width);
-          _results.push(new App.Model.Tile(x, y));
+          tile = new App.Model.Tile(x, y);
+          tile.passable = (x === 0 || x === (this.width - 1)) || (y === 0 || y === (this.height - 1)) ? false : true;
+          _results.push(tile);
         }
         return _results;
       }).call(this);
@@ -339,6 +410,23 @@ _module_("App.Model", function(App) {
         return null;
       }
       return this.tiles[x + y * this.width];
+    };
+
+    Layer.prototype.isPassable = function(x, y) {
+      var tile;
+      tile = this.at(~~x, ~~y);
+      return tile.passable;
+    };
+
+    Layer.prototype.getRandomPassble = function() {
+      var x, y;
+      x = this.width * Math.random();
+      y = this.height * Math.random();
+      if (this.isPassable(x, y)) {
+        return [x, y];
+      } else {
+        return this.getRandomPassble();
+      }
     };
 
     return Layer;
@@ -368,8 +456,10 @@ _module_('App.Model', function(App, Model) {
     };
 
     Monster.prototype.initialize = function() {
-      var _this = this;
-      this.objectList = App.game.objectList;
+      var floor,
+        _this = this;
+      floor = App.Model.currentFloor();
+      this.objectList = floor.objectList;
       return this.on('hit', function(other) {
         _this.set({
           hp: _this.hp - 1
@@ -397,20 +487,17 @@ _module_('App.Model', function(App, Model) {
 
     __extends(Player, _super);
 
-    function Player() {
-      this.initialize = __bind(this.initialize, this);
-      return Player.__super__.constructor.apply(this, arguments);
-    }
-
     Player.prototype.defaults = function() {
       return _.extend(Player.__super__.defaults.apply(this, arguments), {
-        move_speed: 0.5
+        move_speed: 0.2
       });
     };
 
     Player.prototype.initialize = function() {
-      var _this = this;
-      App.game.on('enterframe', function() {
+      var floor,
+        _this = this;
+      floor = App.Model.currentFloor();
+      floor.on('enterframe', function() {
         var a, d, down, left, right, s, up, w, _ref;
         _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
         if (up || w) {
@@ -429,8 +516,9 @@ _module_('App.Model', function(App, Model) {
       return this.on('click_left', function(_arg) {
         var x, y;
         x = _arg.x, y = _arg.y;
+        floor = App.Model.currentFloor();
         return _this.registerEvent(function() {
-          return App.game.objectList.add(new Model.Bullet({
+          return floor.objectList.add(new Model.Bullet({
             x: _this.x,
             y: _this.y,
             rad: atan2(y - _this.y, x - _this.x)
@@ -439,9 +527,22 @@ _module_('App.Model', function(App, Model) {
       });
     };
 
+    function Player() {
+      this.initialize = __bind(this.initialize, this);
+      Player.__super__.constructor.apply(this, arguments);
+      this.x = 3;
+      this.y = 3;
+    }
+
     Player.prototype.moveBy = function(dx, dy) {
-      this.x += dx;
-      return this.y += dy;
+      var layer, nx, ny;
+      layer = App.Scene.Field.map.layers[0];
+      nx = this.x + dx;
+      ny = this.y + dy;
+      if (layer.isPassable(nx, ny)) {
+        this.x = nx;
+        return this.y = ny;
+      }
     };
 
     return Player;
@@ -547,7 +648,6 @@ _module_("App.Scene", function(App, Scene) {
       this.x += App.instance.width / 2;
       this.y += App.instance.height / 2;
       Scene.Field.board = this;
-      this.setupMap();
       this.objectList.on('add', function(model) {
         if (model instanceof App.Model.Bullet) {
           return _this.addChild(new App.View.Bullet(model));
@@ -556,26 +656,29 @@ _module_("App.Scene", function(App, Scene) {
         }
       });
       this.objectList.on('remove', function(model) {
-        var target;
-        p('remove', model.cid);
+        var target, _ref;
         target = _.find(_this.childNodes, function(node) {
           return node.model === model;
         });
-        return target != null ? target.remove() : void 0;
+        if (target != null) {
+          target.remove();
+          if ((_ref = target.model) != null) {
+            _ref.off();
+          }
+          return App.game.off(null, null, target);
+        }
       });
     }
 
-    ObjectBoard.prototype.setupMap = function() {
-      var map_renderer;
-      map_renderer = new App.View.Map();
-      return this.addChild(map_renderer);
-    };
-
     ObjectBoard.prototype.registerCamera = function(view) {
-      var _this = this;
+      var fixCamera,
+        _this = this;
+      (fixCamera = function() {
+        _this.x = App.instance.width / 2 - view.model.x * App.VIEW_SCALE;
+        return _this.y = App.instance.height / 2 - view.model.y * App.VIEW_SCALE;
+      })();
       return view.model.on('change:x change:y', function(model) {
-        _this.x = App.instance.width / 2 - model.x * App.VIEW_SCALE;
-        return _this.y = App.instance.height / 2 - model.y * App.VIEW_SCALE;
+        return fixCamera();
       });
     };
 
@@ -593,10 +696,13 @@ _module_("App.Scene", function(App, Scene) {
       Field.__super__.constructor.apply(this, arguments);
       this.game = App.game;
       this.setupBoard();
+      this.setupMap();
       this.setupPlayer();
       this.setupMouse();
       this.on('enterframe', function() {
-        return _this.game.trigger('enterframe');
+        var floor;
+        floor = App.Model.currentFloor();
+        return floor.trigger('enterframe');
       });
       this.on('touchstart', function(e) {
         var x, y;
@@ -609,17 +715,25 @@ _module_("App.Scene", function(App, Scene) {
       });
       this.on('touchend', function(e) {});
       this.on('touchmove', function(e) {});
-      this.game.spawn();
     }
 
+    Field.prototype.setupMap = function() {
+      var map;
+      map = new App.View.Map();
+      Scene.Field.map = map;
+      return this.board.addChild(map);
+    };
+
     Field.prototype.setupPlayer = function() {
-      this.player = new App.View.Player(0, 0);
+      this.player = new App.View.Player;
       this.board.addChild(this.player);
       return this.board.registerCamera(this.player);
     };
 
     Field.prototype.setupBoard = function() {
-      this.board = new ObjectBoard(this.game.objectList);
+      var floor;
+      floor = App.Model.currentFloor();
+      this.board = new ObjectBoard(floor.objectList);
       return this.addChild(this.board);
     };
 
@@ -727,7 +841,9 @@ _module_("App.View", function(App, View) {
     };
 
     Map.prototype.drawTile = function(tile) {
-      return Field.board.addChild(new App.Object.Square(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE, '#ccc'));
+      var color;
+      color = tile.passable ? '#eee' : '#888';
+      return this.addChild(new App.Object.Square(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE, color));
     };
 
     return Map;

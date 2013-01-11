@@ -14,13 +14,14 @@ _module_ 'App.Model', (App, Model)->
       @y_speed = sin(rad) * @move_speed
 
     initialize: ->
-      @objectList = App.game.objectList
+      floor = App.Model.currentFloor()
+      @objectList = floor.objectList
 
-      App.game.on 'enterframe', =>
+      floor.on 'enterframe', =>
         # 時間消滅
         if @isExpired()
           @registerEvent =>
-            App.game.objectList.remove(@)
+            @objectList.remove(@)
           return
 
         # 当たり判定
