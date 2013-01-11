@@ -504,36 +504,36 @@ _module_("App.Scene", function(App, Scene) {
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_("App.View", function(App) {
-  var Field, abs, atan2, cos, sin;
+_module_("App.View", function(App, View) {
+  var Field;
   Field = App.Scene.Field;
-  abs = Math.abs, sin = Math.sin, cos = Math.cos, atan2 = Math.atan2;
+  this.BindGroup = (function(_super) {
+
+    __extends(BindGroup, _super);
+
+    function BindGroup(model) {
+      var _this = this;
+      BindGroup.__super__.constructor.apply(this, arguments);
+      this.x = this.model.x;
+      this.y = this.model.y;
+      model.on('change:x change:y', function() {
+        _this.x = model.x;
+        return _this.y = model.y;
+      });
+    }
+
+    return BindGroup;
+
+  })(enchant.Group);
   return this.Bullet = (function(_super) {
 
     __extends(Bullet, _super);
 
-    Bullet.prototype.size = 10;
-
     function Bullet(model) {
-      var _this = this;
       this.model = model;
       Bullet.__super__.constructor.apply(this, arguments);
-      this.x = this.model.x;
-      this.y = this.model.y;
-      this.model.on('change:x change:y', function() {
-        _this.x = _this.model.x;
-        return _this.y = _this.model.y;
-      });
       this.draw();
     }
-
-    Bullet.prototype.isExpired = function() {
-      return this.age > App.instance.fps * 1;
-    };
-
-    Bullet.prototype.within = function(other) {
-      return abs(this.x - other.x) < this.size && abs(this.y - other.y) < this.size;
-    };
 
     Bullet.prototype.draw = function() {
       return this.addChild(new App.Object.Circle(0, 0, 10, 'black', 'stroke'));
@@ -541,7 +541,7 @@ _module_("App.View", function(App) {
 
     return Bullet;
 
-  })(enchant.Group);
+  })(View.BindGroup);
 });
 
 var __hasProp = {}.hasOwnProperty,
