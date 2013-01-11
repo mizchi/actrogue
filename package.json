@@ -1,0 +1,21 @@
+{
+  "name": "mygame",
+  "version": "0.0.0",
+  "scripts": {
+    "test": ""
+  },
+  "jam": {
+     "packageDir": "vendor",
+     "dependencies": {
+        "enchantjs": "0.6.2",
+        "underscore": null
+      }
+  },
+  "devDepencies": {
+    "grunt": "*",
+    "grunt-coffee": "*"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD"
+}
