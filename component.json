@@ -1,0 +1,10 @@
+{
+    "name":  "MyProject",
+    "version": "0.0.1",
+    "dependencies": {
+        "backbone": "latest",
+        "underscore": "latest",
+        "enchant": "git://github.com/wise9/enchant.js.git",
+        "requirejs": "2.1.1"
+    }
+}

@@ -4,13 +4,6 @@
   "scripts": {
     "test": ""
   },
-  "jam": {
-     "packageDir": "vendor",
-     "dependencies": {
-        "enchantjs": null,
-        "underscore": null
-      }
-  },
   "devDepencies": {
     "grunt": "*",
     "grunt-coffee": "*"

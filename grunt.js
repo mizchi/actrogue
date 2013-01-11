@@ -14,6 +14,15 @@ module.exports = function( grunt ) {
     },
 
     concat: {
+      vendor: {
+        src: [
+          "components/underscore/underscore-min.js",
+          "components/backbone/backbone-min.js",
+          "components/enchant/enchant.min.js"
+        ],
+        dest: "dist/vendor.js"
+      },
+
       app: {
         src: [
           "lib/util/*.js",

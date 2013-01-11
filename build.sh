@@ -1,4 +1,3 @@
-jam install
-jam compile dist/vendor.js
+bower install
 grunt coffee
 grunt concat

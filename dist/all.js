@@ -79,8 +79,6 @@ root._module_ = function(ns, f) {
 };
 
 
-require(['underscore', 'enchantjs'], function() {});
-
 window.onload = function() {
   var game;
   enchant();
@@ -125,29 +123,72 @@ _module_("App", function(App) {
   })(enchant.Core);
 });
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_("App.View", function(App) {
-  return this.Monster = (function(_super) {
+_module_('App.Model', function(App, Game) {
+  var Player;
+  Player = (function() {
 
-    __extends(Monster, _super);
-
-    function Monster(x, y) {
-      this.enterframe = __bind(this.enterframe, this);
-      Monster.__super__.constructor.apply(this, arguments);
-      this.x = x;
-      this.y = y;
-      this.addChild(new App.Object.Circle(0, 0, 20, "red"));
-      this.on('enterframe', this.enterframe);
+    function Player() {
+      this.x = 0;
+      this.y = 0;
     }
 
-    Monster.prototype.enterframe = function() {};
+    return Player;
 
-    return Monster;
+  })();
+  return this.Game = (function() {
 
-  })(enchant.Group);
+    function Game() {
+      Game.input = App.instance.input;
+    }
+
+    Game.prototype.enterframe = function() {};
+
+    return Game;
+
+  })();
+});
+
+
+_module_("App.Model", function(App) {
+  this.Tile = (function() {
+
+    function Tile(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+
+    return Tile;
+
+  })();
+  return this.Layer = (function() {
+
+    function Layer() {
+      var i, x, y;
+      this.width = 4;
+      this.height = 3;
+      this.tiles = (function() {
+        var _i, _ref, _results;
+        _results = [];
+        for (i = _i = 0, _ref = this.width * this.height; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          x = i % this.width;
+          y = ~~(i / this.width);
+          _results.push(new App.Model.Tile(x, y));
+        }
+        return _results;
+      }).call(this);
+    }
+
+    Layer.prototype.at = function(x, y) {
+      if (x > this.row) {
+        return null;
+      }
+      return this.tiles[x + y * this.width];
+    };
+
+    return Layer;
+
+  })();
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -217,6 +258,8 @@ _module_("App.Object", function(App) {
       Square.__super__.constructor.apply(this, arguments);
       this.width = width;
       this.height = height;
+      this.x = x;
+      this.y = y;
       this.fixOffset();
       surface = new enchant.Surface(this.width, this.height);
       g = surface.context;
@@ -239,24 +282,29 @@ _module_("App.Scene", function(App) {
 
     __extends(Field, _super);
 
+    Field.board = null;
+
     function Field() {
       this.enterframe = __bind(this.enterframe, this);
 
-      var _this = this;
+      var map_renderer,
+        _this = this;
       Field.__super__.constructor.apply(this, arguments);
-      this.board = new enchant.Group;
-      this.addChild(this.board);
-      this.board.x += App.instance.width / 2;
-      this.board.y += App.instance.height / 2;
-      this.player = new App.View.Player(0, 0);
-      this.board.addChild(this.player);
+      this.game = new App.Model.Game;
+      this.setupBoard();
+      map_renderer = new App.View.Map();
+      this.board.addChild(map_renderer);
+      this.setupPlayer();
       this.spawnMonster();
+      this.setupMouse();
       this.on('enterframe', this.enterframe);
-      this.mouse = new App.View.Mouse(10);
-      this.addChild(this.mouse);
       this.on('touchstart', function(e) {
-        _this.mouse.x = e.x;
-        return _this.mouse.y = e.y;
+        var radForMouse, x, y;
+        x = _this.player.x + _this.mouse.y - App.instance.height / 2;
+        y = _this.player.y + _this.mouse.x - App.instance.width / 2;
+        radForMouse = Math.atan2(_this.mouse.y - App.instance.height / 2, _this.mouse.x - App.instance.width / 2);
+        _this.player.shoot(radForMouse);
+        return _this.player.dispatchEvent("click", x, y);
       });
       this.on('touchend', function(e) {});
       this.on('touchmove', function(e) {
@@ -264,6 +312,24 @@ _module_("App.Scene", function(App) {
         return _this.mouse.y = e.y;
       });
     }
+
+    Field.prototype.setupPlayer = function() {
+      this.player = new App.View.Player(0, 0);
+      return this.board.addChild(this.player);
+    };
+
+    Field.prototype.setupBoard = function() {
+      this.board = new enchant.Group;
+      this.addChild(this.board);
+      App.Scene.Field.board = this.board;
+      this.board.x += App.instance.width / 2;
+      return this.board.y += App.instance.height / 2;
+    };
+
+    Field.prototype.setupMouse = function() {
+      this.mouse = new App.View.Mouse(10);
+      return this.addChild(this.mouse);
+    };
 
     Field.prototype.spawnMonster = function() {
       var i, x, y, _i, _results;
@@ -278,6 +344,7 @@ _module_("App.Scene", function(App) {
 
     Field.prototype.enterframe = function() {
       var a, d, down, left, right, s, up, w, _ref;
+      this.game.enterframe();
       this.move_speed = this.player.move_speed;
       _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
       if (up || w) {
@@ -312,19 +379,145 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.View", function(App) {
-  return this.Mouse = (function(_super) {
+  var Field, abs, atan2, cos, sin;
+  Field = App.Scene.Field;
+  abs = Math.abs, sin = Math.sin, cos = Math.cos, atan2 = Math.atan2;
+  return this.Bullet = (function(_super) {
 
-    __extends(Mouse, _super);
+    __extends(Bullet, _super);
 
-    function Mouse() {
-      Mouse.__super__.constructor.apply(this, arguments);
-      this.addChild(new App.Object.Circle(0, 0, 3, 'black', 'stroke'));
+    Bullet.prototype.size = 10;
+
+    function Bullet(x, y, rad, speed, count) {
+      var _this = this;
+      this.speed = speed;
+      if (count == null) {
+        count = 1;
+      }
+      Bullet.__super__.constructor.apply(this, arguments);
+      this.x = x;
+      this.y = y;
+      this.x_speed = ~~(cos(rad) * 10);
+      this.y_speed = ~~(sin(rad) * 10);
+      this.on('enterframe', function() {
+        var enemy, _i, _len, _ref;
+        _this.x += _this.x_speed;
+        _this.y += _this.y_speed;
+        _ref = _this.enemies();
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          enemy = _ref[_i];
+          if (_this.within(enemy)) {
+            enemy.remove();
+          }
+        }
+        if (_this.isExpired()) {
+          return _this.remove();
+        }
+      });
+      this.draw();
+    }
+
+    Bullet.prototype.isExpired = function() {
+      return this.age > App.instance.fps * 1;
+    };
+
+    Bullet.prototype.enemies = function() {
+      var _this = this;
+      return _.filter(Field.board.childNodes, function(n) {
+        return n instanceof App.View.Monster;
+      });
+    };
+
+    Bullet.prototype.within = function(other) {
+      return abs(this.x - other.x) < this.size && abs(this.y - other.y) < this.size;
+    };
+
+    Bullet.prototype.draw = function() {
+      return this.addChild(new App.Object.Circle(0, 0, 10, 'black', 'stroke'));
+    };
+
+    return Bullet;
+
+  })(enchant.Group);
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_("App.View", function(App, View) {
+  this.CELL_SIZE = 24;
+  return this.Map = (function(_super) {
+    var CELL_SIZE, Field;
+
+    __extends(Map, _super);
+
+    Field = App.Scene.Field;
+
+    CELL_SIZE = View.CELL_SIZE;
+
+    function Map() {
+      Map.__super__.constructor.apply(this, arguments);
+      this.layers = [];
+      this.layers[0] = new App.Model.Layer;
+      this.render();
+    }
+
+    Map.prototype.render = function() {
+      var layer, tile, x, y, _i, _len, _ref, _results;
+      _ref = this.layers;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        layer = _ref[_i];
+        _results.push((function() {
+          var _j, _ref1, _results1;
+          _results1 = [];
+          for (x = _j = 0, _ref1 = layer.width; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; x = 0 <= _ref1 ? ++_j : --_j) {
+            _results1.push((function() {
+              var _k, _ref2, _results2;
+              _results2 = [];
+              for (y = _k = 0, _ref2 = layer.height; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; y = 0 <= _ref2 ? ++_k : --_k) {
+                tile = layer.at(x, y);
+                _results2.push(this.drawTile(tile));
+              }
+              return _results2;
+            }).call(this));
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
+    };
+
+    Map.prototype.drawTile = function(tile) {
+      return Field.board.addChild(new App.Object.Square(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE, '#ccc'));
+    };
+
+    return Map;
+
+  })(enchant.Group);
+});
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_("App.View", function(App) {
+  return this.Monster = (function(_super) {
+
+    __extends(Monster, _super);
+
+    function Monster(x, y) {
+      this.enterframe = __bind(this.enterframe, this);
+      Monster.__super__.constructor.apply(this, arguments);
+      this.x = x;
+      this.y = y;
+      this.addChild(new App.Object.Circle(0, 0, 20, "red"));
       this.on('enterframe', this.enterframe);
     }
 
-    Mouse.prototype.enterframe = function() {};
+    Monster.prototype.enterframe = function() {};
 
-    return Mouse;
+    return Monster;
 
   })(enchant.Group);
 });
@@ -340,6 +533,8 @@ _module_("App.View", function(App) {
     function Mouse(size) {
       Mouse.__super__.constructor.apply(this, arguments);
       this.addChild(new App.Object.Circle(0, 0, size, 'green', 'stroke'));
+      this.x = App.instance.width / 2;
+      this.y = App.instance.height / 2;
     }
 
     return Mouse;
@@ -351,6 +546,8 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.View", function(App) {
+  var Field;
+  Field = App.Scene.Field;
   return this.Player = (function(_super) {
 
     __extends(Player, _super);
@@ -360,6 +557,12 @@ _module_("App.View", function(App) {
       this.addChild(new App.Object.Circle(0, 0, 20));
       this.move_speed = 3;
     }
+
+    Player.prototype.shoot = function(rad) {
+      return Field.board.addChild(new App.View.Bullet(this.x, this.y, rad, 10));
+    };
+
+    Player.prototype.shotgun = function() {};
 
     return Player;
 
