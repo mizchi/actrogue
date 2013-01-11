@@ -1,11 +1,9 @@
-_module_ "App.View", (App) ->
-
-  class @Monster extends enchant.Group
-    constructor: (x, y)->
+_module_ "App.View", (App, View) ->
+  class @Monster extends View.BindGroup
+    constructor: (@model) ->
       super
-      @x = x
-      @y = y
-      @addChild new App.Object.Circle 0, 0, 20, "red"
-      @on 'enterframe', @enterframe
+      @draw()
 
-    enterframe: =>
+    draw: ->
+      @addChild new App.Object.Circle 0, 0, 20, "red"
+

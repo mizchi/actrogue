@@ -278,6 +278,29 @@ _module_('App.Model', function(App, Model) {
     return Player;
 
   })(this.Entity);
+  this.Monster = (function(_super) {
+
+    __extends(Monster, _super);
+
+    function Monster() {
+      this.initialize = __bind(this.initialize, this);
+      return Monster.__super__.constructor.apply(this, arguments);
+    }
+
+    Monster.prototype.defaults = function() {
+      return _.extend(Monster.__super__.defaults.apply(this, arguments), {
+        move_speed: 10
+      });
+    };
+
+    Monster.prototype.initialize = function() {
+      var _this = this;
+      return App.game.on('enterframe', function() {});
+    };
+
+    return Monster;
+
+  })(this.Entity);
   ObjectList = (function(_super) {
 
     __extends(ObjectList, _super);
@@ -302,6 +325,20 @@ _module_('App.Model', function(App, Model) {
       this.player = new Model.Player;
       this.objects = new ObjectList([]);
     }
+
+    Game.prototype.spawn = function() {
+      var i, x, y, _i, _results;
+      _results = [];
+      for (i = _i = 0; _i < 10; i = ++_i) {
+        x = Math.random() * App.instance.width;
+        y = Math.random() * App.instance.height;
+        _results.push(this.objects.add(new Model.Monster({
+          x: ~~x,
+          y: ~~y
+        })));
+      }
+      return _results;
+    };
 
     return Game;
 
@@ -449,7 +486,6 @@ _module_("App.Scene", function(App, Scene) {
       this.setupBoard();
       this.setupMap();
       this.setupPlayer();
-      this.spawnMonster();
       this.setupMouse();
       this.on('enterframe', function() {
         _this.game.trigger('enterframe');
@@ -472,6 +508,8 @@ _module_("App.Scene", function(App, Scene) {
       this.game.objects.on('add', function(model) {
         if (model instanceof App.Model.Bullet) {
           return _this.board.addChild(new App.View.Bullet(model));
+        } else if (model instanceof App.Model.Monster) {
+          return _this.board.addChild(new App.View.Monster(model));
         }
       });
       this.game.objects.on('remove', function(model) {
@@ -486,6 +524,7 @@ _module_("App.Scene", function(App, Scene) {
         }
         return _results;
       });
+      this.game.spawn();
     }
 
     Field.prototype.draw = function() {};
@@ -517,17 +556,6 @@ _module_("App.Scene", function(App, Scene) {
     Field.prototype.setupMouse = function() {
       this.mouse = new App.View.Mouse(10);
       return this.addChild(this.mouse);
-    };
-
-    Field.prototype.spawnMonster = function() {
-      var i, x, y, _i, _results;
-      _results = [];
-      for (i = _i = 0; _i < 10; i = ++_i) {
-        x = Math.random() * App.instance.width;
-        y = Math.random() * App.instance.height;
-        _results.push(this.board.addChild(new App.View.Monster(~~x, ~~y)));
-      }
-      return _results;
     };
 
     return Field;
@@ -641,29 +669,27 @@ _module_("App.View", function(App, View) {
   })(enchant.Group);
 });
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
+var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_("App.View", function(App) {
+_module_("App.View", function(App, View) {
   return this.Monster = (function(_super) {
 
     __extends(Monster, _super);
 
-    function Monster(x, y) {
-      this.enterframe = __bind(this.enterframe, this);
+    function Monster(model) {
+      this.model = model;
       Monster.__super__.constructor.apply(this, arguments);
-      this.x = x;
-      this.y = y;
-      this.addChild(new App.Object.Circle(0, 0, 20, "red"));
-      this.on('enterframe', this.enterframe);
+      this.draw();
     }
 
-    Monster.prototype.enterframe = function() {};
+    Monster.prototype.draw = function() {
+      return this.addChild(new App.Object.Circle(0, 0, 20, "red"));
+    };
 
     return Monster;
 
-  })(enchant.Group);
+  })(View.BindGroup);
 });
 
 var __hasProp = {}.hasOwnProperty,

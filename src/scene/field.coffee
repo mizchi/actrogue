@@ -8,7 +8,6 @@ _module_ "App.Scene", (App, Scene) ->
       @setupBoard()
       @setupMap()
       @setupPlayer()
-      @spawnMonster()
       @setupMouse()
 
       @on 'enterframe', =>
@@ -30,9 +29,15 @@ _module_ "App.Scene", (App, Scene) ->
         if model instanceof App.Model.Bullet
           @board.addChild new App.View.Bullet(model)
 
+        else if model instanceof App.Model.Monster
+          @board.addChild new App.View.Monster(model)
+
       @game.objects.on 'remove', (model) =>
         for object in @board.childNodes when objects.model is model
           @board.removeChild object
+
+      @game.spawn()
+
 
     draw: ->
 
@@ -58,10 +63,3 @@ _module_ "App.Scene", (App, Scene) ->
     setupMouse: ->
       @mouse = new App.View.Mouse(10)
       @addChild @mouse
-
-    spawnMonster: ->
-      for i in [0...10]
-        x = Math.random() * App.instance.width
-        y = Math.random() * App.instance.height
-        @board.addChild new App.View.Monster(~~x, ~~y)
-

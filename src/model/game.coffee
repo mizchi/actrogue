@@ -72,6 +72,14 @@ _module_ 'App.Model', (App, Model)->
       @x += dx
       @y += dy
 
+  class @Monster extends @Entity
+    defaults: ->
+      _.extend super,
+        move_speed: 10
+
+    initialize: =>
+      App.game.on 'enterframe', =>
+
   class ObjectList extends Backbone.Collection
     model: Model.Entity
 
@@ -82,3 +90,11 @@ _module_ 'App.Model', (App, Model)->
       Game.input = App.instance.input
       @player = new Model.Player
       @objects = new ObjectList []
+
+    spawn: ->
+      for i in [0...10]
+        x = Math.random() * App.instance.width
+        y = Math.random() * App.instance.height
+        @objects.add new Model.Monster
+          x: ~~x
+          y: ~~y
