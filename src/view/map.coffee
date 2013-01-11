@@ -10,6 +10,7 @@ _module_ "App.View", (App, View) ->
       @layers = []
       @layers[0] = new App.Model.Layer
       @render()
+      App.Game
 
     render: ->
       for layer in @layers

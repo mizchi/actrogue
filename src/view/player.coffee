@@ -5,10 +5,12 @@ _module_ "App.View", (App) ->
     constructor: ->
       super
       @addChild new App.Object.Circle 0, 0, 20
-      @move_speed = 3
+
+      @model = App.game.player
+      @model.on 'change:x change:y', (model) =>
+        @x = model.x
+        @y = model.y
 
     shoot: (rad) ->
       Field.board.addChild new App.View.Bullet(@x, @y, rad, 10)
-
-    shotgun: ->
 
