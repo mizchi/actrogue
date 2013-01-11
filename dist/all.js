@@ -505,17 +505,15 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.View", function(App, View) {
-  var Field;
-  Field = App.Scene.Field;
-  this.BindGroup = (function(_super) {
+  return this.BindGroup = (function(_super) {
 
     __extends(BindGroup, _super);
 
     function BindGroup(model) {
       var _this = this;
       BindGroup.__super__.constructor.apply(this, arguments);
-      this.x = this.model.x;
-      this.y = this.model.y;
+      this.x = model.x;
+      this.y = model.y;
       model.on('change:x change:y', function() {
         _this.x = model.x;
         return _this.y = model.y;
@@ -525,6 +523,14 @@ _module_("App.View", function(App, View) {
     return BindGroup;
 
   })(enchant.Group);
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_("App.View", function(App, View) {
+  var Field;
+  Field = App.Scene.Field;
   return this.Bullet = (function(_super) {
 
     __extends(Bullet, _super);
@@ -654,7 +660,7 @@ _module_("App.View", function(App) {
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_("App.View", function(App) {
+_module_("App.View", function(App, View) {
   var Field;
   Field = App.Scene.Field;
   return this.Player = (function(_super) {
@@ -662,21 +668,16 @@ _module_("App.View", function(App) {
     __extends(Player, _super);
 
     function Player() {
-      var _this = this;
-      Player.__super__.constructor.apply(this, arguments);
-      this.addChild(new App.Object.Circle(0, 0, 20));
       this.model = App.game.player;
-      this.model.on('change:x change:y', function(model) {
-        _this.x = model.x;
-        return _this.y = model.y;
-      });
+      Player.__super__.constructor.call(this, App.game.player);
+      this.draw();
     }
 
-    Player.prototype.shoot = function(rad) {
-      return Field.board.addChild(new App.View.Bullet(this.x, this.y, rad, 10));
+    Player.prototype.draw = function() {
+      return this.addChild(new App.Object.Circle(0, 0, 20));
     };
 
     return Player;
 
-  })(enchant.Group);
+  })(View.BindGroup);
 });

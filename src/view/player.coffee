@@ -1,16 +1,12 @@
-_module_ "App.View", (App) ->
+_module_ "App.View", (App, View) ->
   Field = App.Scene.Field
 
-  class @Player extends enchant.Group
+  class @Player extends View.BindGroup
     constructor: ->
-      super
-      @addChild new App.Object.Circle 0, 0, 20
-
       @model = App.game.player
-      @model.on 'change:x change:y', (model) =>
-        @x = model.x
-        @y = model.y
+      super App.game.player
+      @draw()
 
-    shoot: (rad) ->
-      Field.board.addChild new App.View.Bullet(@x, @y, rad, 10)
+    draw: ->
+      @addChild new App.Object.Circle 0, 0, 20
 
