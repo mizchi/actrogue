@@ -1,3 +1,8 @@
+
+window.p = function() {
+  return console.log.apply(console, arguments);
+};
+
 var root,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -82,6 +87,12 @@ window.onload = function() {
   return game = new App.Core(320, 240);
 };
 
+window.Mouse = {};
+
+window.onmousemove = function(e) {
+  return window.Mouse = e;
+};
+
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -97,6 +108,10 @@ _module_("App", function(App) {
       App.instance = this;
       App.input = this.input;
       this.fps = 30;
+      this.keybind('W'.charCodeAt(0), 'w');
+      this.keybind('A'.charCodeAt(0), 'a');
+      this.keybind('S'.charCodeAt(0), 's');
+      this.keybind('D'.charCodeAt(0), 'd');
       this.onload = function() {
         var field;
         field = new App.Scene.Field;
@@ -135,9 +150,6 @@ _module_("App.View", function(App) {
   })(enchant.Group);
 });
 
-
-
-
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -163,10 +175,13 @@ _module_("App.Object", function(App) {
 
     __extends(Circle, _super);
 
-    function Circle(x, y, size, color) {
+    function Circle(x, y, size, color, style) {
       var surface;
       if (color == null) {
         color = 'black';
+      }
+      if (style == null) {
+        style = 'fill';
       }
       Circle.__super__.constructor.apply(this, arguments);
       this.width = size;
@@ -175,9 +190,15 @@ _module_("App.Object", function(App) {
       surface = new enchant.Surface(size, size);
       this.g = surface.context;
       this.g.fillStyle = color;
+      this.g.strokeStyle = color;
       this.g.beginPath();
       this.g.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2, true);
-      this.g.fill();
+      if (style === 'fill') {
+        this.g.fill();
+      }
+      if (style === 'stroke') {
+        this.g.stroke();
+      }
       this.image = surface;
     }
 
@@ -209,7 +230,8 @@ _module_("App.Object", function(App) {
   })(Base);
 });
 
-var __hasProp = {}.hasOwnProperty,
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.Scene", function(App) {
@@ -218,16 +240,68 @@ _module_("App.Scene", function(App) {
     __extends(Field, _super);
 
     function Field() {
-      var i, x, y, _i;
+      this.enterframe = __bind(this.enterframe, this);
+
+      var _this = this;
       Field.__super__.constructor.apply(this, arguments);
-      this.addChild(new App.View.Player(0, 0));
-      this.monsters = [];
-      for (i = _i = 0; _i < 9; i = ++_i) {
+      this.board = new enchant.Group;
+      this.addChild(this.board);
+      this.board.x += App.instance.width / 2;
+      this.board.y += App.instance.height / 2;
+      this.player = new App.View.Player(0, 0);
+      this.board.addChild(this.player);
+      this.spawnMonster();
+      this.on('enterframe', this.enterframe);
+      this.mouse = new App.View.Mouse(10);
+      this.addChild(this.mouse);
+      this.on('touchstart', function(e) {
+        _this.mouse.x = e.x;
+        return _this.mouse.y = e.y;
+      });
+      this.on('touchend', function(e) {});
+      this.on('touchmove', function(e) {
+        _this.mouse.x = e.x;
+        return _this.mouse.y = e.y;
+      });
+    }
+
+    Field.prototype.spawnMonster = function() {
+      var i, x, y, _i, _results;
+      _results = [];
+      for (i = _i = 0; _i < 10; i = ++_i) {
         x = Math.random() * App.instance.width;
         y = Math.random() * App.instance.height;
-        this.addChild(new App.View.Monster(~~x, ~~y));
+        _results.push(this.board.addChild(new App.View.Monster(~~x, ~~y)));
       }
-    }
+      return _results;
+    };
+
+    Field.prototype.enterframe = function() {
+      var a, d, down, left, right, s, up, w, _ref;
+      this.move_speed = this.player.move_speed;
+      _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
+      if (up || w) {
+        this.moveBy(0, -this.move_speed);
+      }
+      if (down || s) {
+        this.moveBy(0, +this.move_speed);
+      }
+      if (right || d) {
+        this.moveBy(+this.move_speed, 0);
+      }
+      if (left || a) {
+        this.moveBy(-this.move_speed, 0);
+      }
+      this.mouse.x = Mouse.offsetX;
+      return this.mouse.y = Mouse.offsetY;
+    };
+
+    Field.prototype.moveBy = function(dx, dy) {
+      this.board.x -= dx;
+      this.board.y -= dy;
+      this.player.x += dx;
+      return this.player.y += dy;
+    };
 
     return Field;
 
@@ -237,26 +311,40 @@ _module_("App.Scene", function(App) {
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_("App.Scene", function(App) {
-  return this.Field = (function(_super) {
+_module_("App.View", function(App) {
+  return this.Mouse = (function(_super) {
 
-    __extends(Field, _super);
+    __extends(Mouse, _super);
 
-    function Field() {
-      var i, x, y, _i;
-      Field.__super__.constructor.apply(this, arguments);
-      this.addChild(new App.View.Player(0, 0));
-      this.monsters = [];
-      for (i = _i = 0; _i < 9; i = ++_i) {
-        x = Math.random() * App.instance.width;
-        y = Math.random() * App.instance.height;
-        this.addChild(new App.View.Monster(~~x, ~~y));
-      }
+    function Mouse() {
+      Mouse.__super__.constructor.apply(this, arguments);
+      this.addChild(new App.Object.Circle(0, 0, 3, 'black', 'stroke'));
+      this.on('enterframe', this.enterframe);
     }
 
-    return Field;
+    Mouse.prototype.enterframe = function() {};
 
-  })(enchant.Scene);
+    return Mouse;
+
+  })(enchant.Group);
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_("App.View", function(App) {
+  return this.Mouse = (function(_super) {
+
+    __extends(Mouse, _super);
+
+    function Mouse(size) {
+      Mouse.__super__.constructor.apply(this, arguments);
+      this.addChild(new App.Object.Circle(0, 0, size, 'green', 'stroke'));
+    }
+
+    return Mouse;
+
+  })(enchant.Group);
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -268,30 +356,10 @@ _module_("App.View", function(App) {
     __extends(Player, _super);
 
     function Player() {
-      var _this = this;
       Player.__super__.constructor.apply(this, arguments);
       this.addChild(new App.Object.Circle(0, 0, 20));
       this.move_speed = 3;
-      this.on('enterframe', function() {
-        if (App.input.up) {
-          _this.moveBy(0, -_this.move_speed);
-        }
-        if (App.input.down) {
-          _this.moveBy(0, +_this.move_speed);
-        }
-        if (App.input.right) {
-          _this.moveBy(+_this.move_speed, 0);
-        }
-        if (App.input.left) {
-          return _this.moveBy(-_this.move_speed, 0);
-        }
-      });
     }
-
-    Player.prototype.moveBy = function(dx, dy) {
-      this.x = this.x + dx;
-      return this.y = this.y + dy;
-    };
 
     return Player;
 

@@ -8,21 +8,26 @@ _module_ "App.Object", (App) ->
       @y -= @height/2
 
   class @Circle extends Base
-    constructor: (x, y, size, color= 'black')->
+    constructor: (x, y, size, color= 'black', style='fill')->
       super
       @width = size
       @height = size
-
       @fixOffset()
 
       surface = new enchant.Surface(size, size)
 
       @g = surface.context
+
       @g.fillStyle = color
+      @g.strokeStyle = color
 
       @g.beginPath()
       @g.arc(size/2, size/2, size/2, 0, Math.PI*2, true)
-      @g.fill()
+
+      if style is 'fill'
+        @g.fill()
+      if style is 'stroke'
+        @g.stroke()
 
       @image = surface
 
