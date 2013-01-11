@@ -1,5 +1,4 @@
 _module_ 'App.Model', (App, Model)->
-  {abs, sin, cos, atan2} = Math
 
   class @Bullet extends @Entity
     defaults: ->
@@ -10,34 +9,36 @@ _module_ 'App.Model', (App, Model)->
 
     constructor: ({rad}) ->
       super
-      @x_speed = cos(rad) * @move_speed
-      @y_speed = sin(rad) * @move_speed
+      @x_speed = Math.cos(rad) * @move_speed
+      @y_speed = Math.sin(rad) * @move_speed
+      @floor = App.Model.currentFloor()
+      @objectList = @floor.objectList
+      @floor.on 'enterframe', @enterframe
+
+    enterframe: =>
+      # 時間消滅
+      if @isExpired()
+        @registerEvent =>
+          @objectList.remove(@)
+        return
+
+      # 当たり判定
+      t = @objectList.find (model) =>
+        (model instanceof App.Model.Monster) and @within model
+      if t?
+        t?.trigger 'hit', @
+        @objectList.remove @
+
+      # 直進
+      @x = @x + @x_speed
+      @y = @y + @y_speed
 
     initialize: ->
-      floor = App.Model.currentFloor()
-      @objectList = floor.objectList
-
-      floor.on 'enterframe', =>
-        # 時間消滅
-        if @isExpired()
-          @registerEvent =>
-            @objectList.remove(@)
-          return
-
-        # 当たり判定
-        t = @objectList.find (model) =>
-          (model instanceof App.Model.Monster) and @within model
-        if t?
-          t?.trigger 'hit', @
-          @objectList.remove @
-
-        # 直進
-        @x = @x + @x_speed
-        @y = @y + @y_speed
-
+      @floor = App.Model.currentFloor()
+      @objectList = @floor.objectList
 
     within: (other) ->
-      abs(@x - other.x) < 1 and abs(@y - other.y) < 1
+      Math.abs(@x - other.x) < 1 and Math.abs(@y - other.y) < 1
 
     isExpired: ->
       @cnt > App.instance.fps * 0.5

@@ -6,27 +6,28 @@ _module_ 'App.Model', (App, Model)->
       _.extend super,
         move_speed: 0.2
 
-    initialize: =>
-      floor = App.Model.currentFloor()
-      floor.on 'enterframe', =>
-        {up,down,right,left,w,a,s,d} = App.input
-        if up or w    then @moveBy 0, -@move_speed
-        if down or s  then @moveBy 0, +@move_speed
-        if right or d then @moveBy +@move_speed, 0
-        if left or a  then @moveBy -@move_speed, 0
-
-      @on 'click_left', ({x, y}) =>
-        floor = App.Model.currentFloor()
-        @registerEvent =>
-          floor.objectList.add new Model.Bullet
-            x: @x
-            y: @y
-            rad: atan2(y - @y, x - @x)
-
     constructor: ->
       super
       @x = 3
       @y = 3
+
+    initialize: =>
+      @floor = App.Model.currentFloor()
+      @floor.on 'enterframe', @enterframe
+      @on 'click_left', @click_left
+
+    enterframe: =>
+      if App.input.up    or App.input.w then @moveBy 0, -@move_speed
+      else if App.input.down  or App.input.s then @moveBy 0, +@move_speed
+      if App.input.right or App.input.d then @moveBy +@move_speed, 0
+      else if App.input.left  or App.input.a then @moveBy -@move_speed, 0
+
+    click_left: ({x, y}) =>
+      @registerEvent =>
+        @floor.objectList.add new Model.Bullet
+          x: @x
+          y: @y
+          rad: atan2(y - @y, x - @x)
 
     moveBy: (dx, dy)->
       layer = App.Scene.Field.map.layers[0]

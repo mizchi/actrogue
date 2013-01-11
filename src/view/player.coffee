@@ -1,9 +1,9 @@
-_module_ "App.View", (App, View) ->
+_module_ "App.View", (App) ->
   class @Player extends enchant.Group
     constructor: ->
       super
       @model = App.game.player
-      View.bindPosition(@, @model)
+      App.View.bindPosition(@, @model)
       @draw()
 
     draw: ->

@@ -16,9 +16,13 @@ _module_ 'App.Model', (App, Model)->
       super
       @cnt = 0
 
-      floor = App.Model.currentFloor()
-      floor.on 'enterframe', =>
-        @cnt++
+      @floor = App.Model.currentFloor()
+      @floor.on 'enterframe', @enterframe
+
+    enterframe: =>
+      @cnt++
+
+    enterframe: =>
 
     registerEvent: (f) ->
       floor = App.Model.currentFloor()

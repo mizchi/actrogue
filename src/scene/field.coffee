@@ -4,31 +4,28 @@ _module_ "App.Scene", (App, Scene) ->
       super
       @x += App.instance.width/2
       @y += App.instance.height/2
-      Scene.Field.board = @
+      @objectList.on 'add', @add
+      @objectList.on 'remove', @remove
 
-      @objectList.on 'add', (model) =>
-        if model instanceof App.Model.Bullet
-          @addChild new App.View.Bullet(model)
-        else if model instanceof App.Model.Monster
-          @addChild new App.View.Monster(model)
-
-      @objectList.on 'remove', (model) =>
-        target = _.find @childNodes, (node) => node.model is model
-        if target?
-          target.remove()
-          target.model?.off()
-          App.game.off(null, null, target)
+    add: (model) =>
+      if model instanceof App.Model.Bullet
+        @addChild new App.View.Bullet(model)
+      else if model instanceof App.Model.Monster
+        @addChild new App.View.Monster(model)
+    remove: (model) =>
+      target = _.find @childNodes, (node) => node.model is model
+      if target?
+        target.remove()
+        target.model?.off()
+        App.game.off(null, null, target)
 
     registerCamera: (view) ->
       do fixCamera = =>
         @x = App.instance.width/2 - view.model.x * App.VIEW_SCALE
         @y = App.instance.height/2 - view.model.y * App.VIEW_SCALE
-
-      view.model.on 'change:x change:y', (model) =>
-        fixCamera()
+      view.model.on 'change:x change:y', fixCamera
 
   class @Field extends enchant.Scene
-    @board = null
     constructor: ->
       super
       @game = App.game
@@ -38,20 +35,21 @@ _module_ "App.Scene", (App, Scene) ->
       @setupPlayer()
       @setupMouse()
 
-      @on 'enterframe', =>
-        floor = App.Model.currentFloor()
-        floor.trigger 'enterframe'
-
-      @on 'touchstart', (e) =>
-        x = @player.x + @mouse.x - App.instance.width/2
-        y = @player.y + @mouse.y - App.instance.height/2
-
-        @player.model.trigger 'click_left',
-          x: x/App.VIEW_SCALE
-          y: y/App.VIEW_SCALE
-
+      @floor = App.Model.currentFloor()
+      @on 'enterframe', @enterframe
+      @on 'touchstart', @touchstart
       @on 'touchend', (e) =>
       @on 'touchmove', (e) =>
+
+    enterframe: =>
+      @floor.trigger 'enterframe'
+
+    touchstart: (e)=>
+      x = @player.x + @mouse.x - App.instance.width/2
+      y = @player.y + @mouse.y - App.instance.height/2
+      @player.model.trigger 'click_left',
+        x: x/App.VIEW_SCALE
+        y: y/App.VIEW_SCALE
 
     setupMap: ->
       map = new App.View.Map()
