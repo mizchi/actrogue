@@ -78,6 +78,63 @@ root._module_ = function(ns, f) {
   return f.apply(context, hist);
 };
 
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_('App.Model', function(App, Model) {
+  this.Base = (function(_super) {
+
+    __extends(Base, _super);
+
+    function Base() {
+      var _this = this;
+      Base.__super__.constructor.apply(this, arguments);
+      _.each(this.attributes, function(value, key) {
+        return Object.defineProperty(_this, key, {
+          get: function() {
+            return _this.get(key);
+          },
+          set: function(val) {
+            return _this.set(key, val);
+          }
+        });
+      });
+    }
+
+    return Base;
+
+  })(Backbone.Model);
+  return this.Entity = (function(_super) {
+
+    __extends(Entity, _super);
+
+    Entity.prototype.defaults = function() {
+      return {
+        x: 0,
+        y: 0
+      };
+    };
+
+    function Entity() {
+      var _this = this;
+      Entity.__super__.constructor.apply(this, arguments);
+      this.cnt = 0;
+      App.game.on('enterframe', function() {
+        return _this.cnt++;
+      });
+    }
+
+    Entity.prototype.registerEvent = function(f) {
+      return App.game.once('enterframe', function() {
+        return f();
+      });
+    };
+
+    return Entity;
+
+  })(this.Base);
+});
+
 
 window.onload = function() {
   var game;
@@ -90,6 +147,11 @@ window.MouseEvent = {};
 window.onmousemove = function(e) {
   return window.MouseEvent = e;
 };
+
+_module_("App", function(App) {
+  App.game = null;
+  return App.instance = null;
+});
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -124,64 +186,12 @@ _module_("App", function(App) {
 });
 
 var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_('App.Model', function(App, Model) {
-  var ObjectList, abs, atan2, cos, sin;
+  var abs, atan2, cos, sin;
   abs = Math.abs, sin = Math.sin, cos = Math.cos, atan2 = Math.atan2;
-  this.Base = (function(_super) {
-
-    __extends(Base, _super);
-
-    function Base() {
-      var _this = this;
-      Base.__super__.constructor.apply(this, arguments);
-      _.each(this.attributes, function(value, key) {
-        return Object.defineProperty(_this, key, {
-          get: function() {
-            return _this.get(key);
-          },
-          set: function(val) {
-            return _this.set(key, val);
-          }
-        });
-      });
-    }
-
-    return Base;
-
-  })(Backbone.Model);
-  this.Entity = (function(_super) {
-
-    __extends(Entity, _super);
-
-    Entity.prototype.defaults = function() {
-      return {
-        x: 0,
-        y: 0
-      };
-    };
-
-    function Entity() {
-      var _this = this;
-      Entity.__super__.constructor.apply(this, arguments);
-      this.cnt = 0;
-      App.game.on('enterframe', function() {
-        return _this.cnt++;
-      });
-    }
-
-    Entity.prototype.registerEvent = function(f) {
-      return App.game.once('enterframe', function() {
-        return f();
-      });
-    };
-
-    return Entity;
-
-  })(this.Base);
-  this.Bullet = (function(_super) {
+  return this.Bullet = (function(_super) {
 
     __extends(Bullet, _super);
 
@@ -224,83 +234,13 @@ _module_('App.Model', function(App, Model) {
     return Bullet;
 
   })(this.Entity);
-  this.Player = (function(_super) {
+});
 
-    __extends(Player, _super);
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-    function Player() {
-      this.initialize = __bind(this.initialize, this);
-      return Player.__super__.constructor.apply(this, arguments);
-    }
-
-    Player.prototype.defaults = function() {
-      return _.extend(Player.__super__.defaults.apply(this, arguments), {
-        move_speed: 10
-      });
-    };
-
-    Player.prototype.initialize = function() {
-      var _this = this;
-      App.game.on('enterframe', function() {
-        var a, d, down, left, right, s, up, w, _ref;
-        _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
-        if (up || w) {
-          _this.moveBy(0, -_this.move_speed);
-        }
-        if (down || s) {
-          _this.moveBy(0, +_this.move_speed);
-        }
-        if (right || d) {
-          _this.moveBy(+_this.move_speed, 0);
-        }
-        if (left || a) {
-          return _this.moveBy(-_this.move_speed, 0);
-        }
-      });
-      return this.on('click_left', function(_arg) {
-        var x, y;
-        x = _arg.x, y = _arg.y;
-        return _this.registerEvent(function() {
-          return App.game.objects.add(new Model.Bullet({
-            x: _this.x,
-            y: _this.y,
-            rad: atan2(y - _this.y, x - _this.x)
-          }));
-        });
-      });
-    };
-
-    Player.prototype.moveBy = function(dx, dy) {
-      this.x += dx;
-      return this.y += dy;
-    };
-
-    return Player;
-
-  })(this.Entity);
-  this.Monster = (function(_super) {
-
-    __extends(Monster, _super);
-
-    function Monster() {
-      this.initialize = __bind(this.initialize, this);
-      return Monster.__super__.constructor.apply(this, arguments);
-    }
-
-    Monster.prototype.defaults = function() {
-      return _.extend(Monster.__super__.defaults.apply(this, arguments), {
-        move_speed: 10
-      });
-    };
-
-    Monster.prototype.initialize = function() {
-      var _this = this;
-      return App.game.on('enterframe', function() {});
-    };
-
-    return Monster;
-
-  })(this.Entity);
+_module_('App.Model', function(App, Model) {
+  var ObjectList;
   ObjectList = (function(_super) {
 
     __extends(ObjectList, _super);
@@ -385,6 +325,99 @@ _module_("App.Model", function(App) {
     return Layer;
 
   })();
+});
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_('App.Model', function(App, Model) {
+  return this.Monster = (function(_super) {
+
+    __extends(Monster, _super);
+
+    function Monster() {
+      this.initialize = __bind(this.initialize, this);
+      return Monster.__super__.constructor.apply(this, arguments);
+    }
+
+    Monster.prototype.defaults = function() {
+      return _.extend(Monster.__super__.defaults.apply(this, arguments), {
+        move_speed: 10
+      });
+    };
+
+    Monster.prototype.initialize = function() {
+      var _this = this;
+      return App.game.on('enterframe', function() {});
+    };
+
+    return Monster;
+
+  })(this.Entity);
+});
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+_module_('App.Model', function(App, Model) {
+  var abs, atan2, cos, sin;
+  abs = Math.abs, sin = Math.sin, cos = Math.cos, atan2 = Math.atan2;
+  return this.Player = (function(_super) {
+
+    __extends(Player, _super);
+
+    function Player() {
+      this.initialize = __bind(this.initialize, this);
+      return Player.__super__.constructor.apply(this, arguments);
+    }
+
+    Player.prototype.defaults = function() {
+      return _.extend(Player.__super__.defaults.apply(this, arguments), {
+        move_speed: 10
+      });
+    };
+
+    Player.prototype.initialize = function() {
+      var _this = this;
+      App.game.on('enterframe', function() {
+        var a, d, down, left, right, s, up, w, _ref;
+        _ref = App.input, up = _ref.up, down = _ref.down, right = _ref.right, left = _ref.left, w = _ref.w, a = _ref.a, s = _ref.s, d = _ref.d;
+        if (up || w) {
+          _this.moveBy(0, -_this.move_speed);
+        }
+        if (down || s) {
+          _this.moveBy(0, +_this.move_speed);
+        }
+        if (right || d) {
+          _this.moveBy(+_this.move_speed, 0);
+        }
+        if (left || a) {
+          return _this.moveBy(-_this.move_speed, 0);
+        }
+      });
+      return this.on('click_left', function(_arg) {
+        var x, y;
+        x = _arg.x, y = _arg.y;
+        return _this.registerEvent(function() {
+          return App.game.objects.add(new Model.Bullet({
+            x: _this.x,
+            y: _this.y,
+            rad: atan2(y - _this.y, x - _this.x)
+          }));
+        });
+      });
+    };
+
+    Player.prototype.moveBy = function(dx, dy) {
+      this.x += dx;
+      return this.y += dy;
+    };
+
+    return Player;
+
+  })(this.Entity);
 });
 
 var __hasProp = {}.hasOwnProperty,
