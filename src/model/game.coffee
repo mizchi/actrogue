@@ -1,5 +1,6 @@
 _module_ 'App.Model', (App, Model)->
   {abs, sin, cos, atan2} = Math
+
   class @Base extends Backbone.Model
     constructor: ->
       super
@@ -19,15 +20,17 @@ _module_ 'App.Model', (App, Model)->
       x: 0
       y: 0
       rad: 0
-      speed: 1
+      speed: 10
 
-    initialize: ({rad, speed}) ->
-      @x_speed = ~~(cos(rad) * 10)
-      @y_speed = ~~(sin(rad) * 10)
+    constructor: ({rad}) ->
+      super
+      @x_speed = ~~(cos(rad) * @speed)
+      @y_speed = ~~(sin(rad) * @speed)
 
-      @on 'enterframe', =>
-        @x += @x_speed
-        @y += @y_speed
+    initialize: ->
+      App.game.on 'enterframe', =>
+        @x = @x + @x_speed
+        @y = @y + @y_speed
 
   class @Player extends @Entity
     defaults:
@@ -37,37 +40,32 @@ _module_ 'App.Model', (App, Model)->
 
     initialize: =>
       @on 'click_left', ({x, y}) =>
-        radForMouse = Math.atan2(y - @y, x - @x)
-        bullet = new Model.Bullet
+        bullet_model = new Model.Bullet
           x: @x
           y: @y
-          rad: radForMouse
-        bulletView = new App.View.Bullet(@x, @y, radForMouse, 10)
-        App.Scene.Field.board.addChild bulletView
+          rad: atan2(y - @y, x - @x)
+        bullet = new App.View.Bullet(bullet_model)
+        App.Scene.Field.board.addChild bullet
 
   class ObjectCollection extends Backbone.Collection
     model: Model.Entity
 
-  @instance = null
   class @Game extends Backbone.Model
     constructor: ->
       super
-      Model.instance = @
       App.game = @
       Game.input = App.instance.input
       @player = new Model.Player
-
       @objects = new ObjectCollection []
 
-    enterframe: ->
-      @move_speed = @player.move_speed
-      {up,down,right,left,w,a,s,d} = App.input
-      if up or w   then @moveBy 0, -@move_speed
-      if down or s then @moveBy 0, +@move_speed
-      if right or d then @moveBy +@move_speed, 0
-      if left or a then @moveBy -@move_speed, 0
+      @on 'enterframe', =>
+        @move_speed = @player.move_speed
+        {up,down,right,left,w,a,s,d} = App.input
+        if up or w    then @moveBy 0, -@move_speed
+        if down or s  then @moveBy 0, +@move_speed
+        if right or d then @moveBy +@move_speed, 0
+        if left or a  then @moveBy -@move_speed, 0
 
     moveBy: (dx, dy)->
-      p dx, dy
       @player.x += dx
       @player.y += dy

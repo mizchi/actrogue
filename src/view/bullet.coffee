@@ -4,28 +4,18 @@ _module_ "App.View", (App) ->
 
   class @Bullet extends enchant.Group
     size: 10
-    constructor: (x, y, rad, @speed, count = 1)->
+    constructor: (@model)->
       super
-      @x = x
-      @y = y
-      @x_speed = ~~(cos(rad) * 10)
-      @y_speed = ~~(sin(rad) * 10)
+      @x = @model.x
+      @y = @model.y
 
-      @on 'enterframe', =>
-        @x += @x_speed
-        @y += @y_speed
-        for enemy in @enemies()
-          if @within(enemy) then enemy.remove()
-
-        if @isExpired() then @remove()
-
+      @model.on 'change:x change:y', =>
+        @x = @model.x
+        @y = @model.y
       @draw()
 
     isExpired: ->
       @age > App.instance.fps * 1
-
-    enemies: ->
-      _.filter Field.board.childNodes, (n) => n instanceof App.View.Monster
 
     within: (other) ->
       abs(@x - other.x) < @size and abs(@y - other.y) < @size

@@ -12,7 +12,7 @@ _module_ "App.Scene", (App, Scene) ->
       @setupMouse()
 
       @on 'enterframe', =>
-        @game.enterframe()
+        @game.trigger 'enterframe'
 
       @on 'touchstart', (e) =>
         x = @player.x + @mouse.x - App.instance.width/2
