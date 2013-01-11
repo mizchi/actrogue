@@ -1,7 +1,8 @@
 _module_ "App.View", (App, View) ->
-  class @Monster extends View.BindGroup
+  class @Monster extends enchant.Group
     constructor: (@model) ->
       super
+      View.bindPosition(@, @model)
       @draw()
 
     draw: ->

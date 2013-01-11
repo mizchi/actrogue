@@ -563,28 +563,36 @@ _module_("App.Scene", function(App, Scene) {
   })(enchant.Scene);
 });
 
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 _module_("App.View", function(App, View) {
-  return this.BindGroup = (function(_super) {
-
-    __extends(BindGroup, _super);
-
-    function BindGroup(model) {
-      var _this = this;
-      BindGroup.__super__.constructor.apply(this, arguments);
-      this.x = model.x;
-      this.y = model.y;
-      model.on('change:x change:y', function() {
-        _this.x = model.x;
-        return _this.y = model.y;
-      });
+  return this.bindPosition = function(view, model) {
+    var _this = this;
+    if (!((model.x != null) && (model.y != null))) {
+      throw 'not enough interface';
     }
+    view.x = model.x;
+    view.y = model.y;
+    return model.on('change:x change:y', function() {
+      view.x = model.x;
+      return view.y = model.y;
+    });
+  };
+});
 
-    return BindGroup;
 
-  })(enchant.Group);
+_module_("App.View", function(App, View) {
+  return this.bindPosition = function(view, model) {
+    var _this = this;
+    if (!((model.x != null) && (model.y != null))) {
+      throw 'not enough interface';
+    }
+    view.x = model.x;
+    view.y = model.y;
+    return model.on('change:x change:y', function() {
+      view.x = model.x;
+      return view.y = model.y;
+    });
+  };
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -600,6 +608,7 @@ _module_("App.View", function(App, View) {
     function Bullet(model) {
       this.model = model;
       Bullet.__super__.constructor.apply(this, arguments);
+      View.bindPosition(this, this.model);
       this.draw();
     }
 
@@ -609,7 +618,7 @@ _module_("App.View", function(App, View) {
 
     return Bullet;
 
-  })(View.BindGroup);
+  })(enchant.Group);
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -680,6 +689,7 @@ _module_("App.View", function(App, View) {
     function Monster(model) {
       this.model = model;
       Monster.__super__.constructor.apply(this, arguments);
+      View.bindPosition(this, this.model);
       this.draw();
     }
 
@@ -689,7 +699,7 @@ _module_("App.View", function(App, View) {
 
     return Monster;
 
-  })(View.BindGroup);
+  })(enchant.Group);
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -726,8 +736,9 @@ _module_("App.View", function(App, View) {
     __extends(Player, _super);
 
     function Player() {
+      Player.__super__.constructor.apply(this, arguments);
       this.model = App.game.player;
-      Player.__super__.constructor.call(this, App.game.player);
+      View.bindPosition(this, this.model);
       this.draw();
     }
 
@@ -737,5 +748,5 @@ _module_("App.View", function(App, View) {
 
     return Player;
 
-  })(View.BindGroup);
+  })(enchant.Group);
 });
