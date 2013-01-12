@@ -1,10 +1,10 @@
-_module_ 'App.Model', (App, Model)->
+_module_ 'App.Model', ->
 
   class @Floor extends Backbone.Model
     constructor: ->
       super
       @player = null
-      @objectList = new Model.ObjectList []
+      @objectList = new App.Model.ObjectList []
       @on 'enterframe', @enterframe
 
     enterframe: =>
@@ -34,10 +34,10 @@ _module_ 'App.Model', (App, Model)->
       super
       App.game = @
       @floors = []
-      @floors.push new Model.Floor
+      @floors.push new App.Model.Floor
       @depth = 0
 
-      @player = new Model.Player
+      @player = new App.Model.Player
       @currentFloor().join(@player)
 
     currentFloor: ->
@@ -47,6 +47,6 @@ _module_ 'App.Model', (App, Model)->
       App.game.floors[App.game.depth]
 
   class @ObjectList extends Backbone.Collection
-    model: Model.Entity
+    model: App.Model.Entity
     constructor: ->
       super

@@ -18,6 +18,7 @@ _module_ "App.Scene", (App, Scene) ->
         target.remove()
         target.model?.off()
         App.game.off(null, null, target)
+        target = null
 
     registerCamera: (view) ->
       do fixCamera = =>

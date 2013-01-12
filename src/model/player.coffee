@@ -23,7 +23,7 @@ _module_ 'App.Model', (App, Model)->
       else if App.input.left  or App.input.a then @moveBy -@move_speed, 0
 
     click_left: ({x, y}) =>
-      @registerEvent =>
+      # @registerEvent =>
         @floor.objectList.add new Model.Bullet
           x: @x
           y: @y

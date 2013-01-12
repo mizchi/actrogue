@@ -15,15 +15,22 @@ _module_ 'App.Model', (App, Model)->
     constructor: ->
       super
       @cnt = 0
-
       @floor = App.Model.currentFloor()
+      @objectList = @floor.objectList
       @floor.on 'enterframe', @enterframe
 
     enterframe: =>
       @cnt++
 
-    enterframe: =>
+    destroy: =>
+      @floor.off('enterframe', @enterframe)
+      @floor.off null, null, @
+      @off()
+      delete @floor
+      delete @objectList
+      delete @x_speed
+      delete @y_speed
+      delete @cnt
 
     registerEvent: (f) ->
-      floor = App.Model.currentFloor()
-      floor.once 'enterframe', -> f()
+      @floor.once 'enterframe', -> f()

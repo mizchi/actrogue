@@ -117,12 +117,13 @@ _module_('App.Model', function(App, Model) {
     };
 
     function Entity() {
-      this.enterframe = __bind(this.enterframe, this);
+      this.destroy = __bind(this.destroy, this);
 
       this.enterframe = __bind(this.enterframe, this);
       Entity.__super__.constructor.apply(this, arguments);
       this.cnt = 0;
       this.floor = App.Model.currentFloor();
+      this.objectList = this.floor.objectList;
       this.floor.on('enterframe', this.enterframe);
     }
 
@@ -130,12 +131,19 @@ _module_('App.Model', function(App, Model) {
       return this.cnt++;
     };
 
-    Entity.prototype.enterframe = function() {};
+    Entity.prototype.destroy = function() {
+      this.floor.off('enterframe', this.enterframe);
+      this.floor.off(null, null, this);
+      this.off();
+      delete this.floor;
+      delete this.objectList;
+      delete this.x_speed;
+      delete this.y_speed;
+      return delete this.cnt;
+    };
 
     Entity.prototype.registerEvent = function(f) {
-      var floor;
-      floor = App.Model.currentFloor();
-      return floor.once('enterframe', function() {
+      return this.floor.once('enterframe', function() {
         return f();
       });
     };
@@ -205,7 +213,7 @@ var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments)
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_('App.Model', function(App, Model) {
+_module_('App.Model', function() {
   return this.Bullet = (function(_super) {
 
     __extends(Bullet, _super);
@@ -213,7 +221,7 @@ _module_('App.Model', function(App, Model) {
     Bullet.prototype.defaults = function() {
       return _.extend(Bullet.__super__.defaults.apply(this, arguments), {
         rad: 0,
-        move_speed: 1,
+        move_speed: 0.5,
         size: 0.3
       });
     };
@@ -226,36 +234,24 @@ _module_('App.Model', function(App, Model) {
       Bullet.__super__.constructor.apply(this, arguments);
       this.x_speed = Math.cos(rad) * this.move_speed;
       this.y_speed = Math.sin(rad) * this.move_speed;
-      this.floor = App.Model.currentFloor();
-      this.objectList = this.floor.objectList;
       this.floor.on('enterframe', this.enterframe);
     }
 
-    Bullet.prototype.enterframe = function() {
-      var t,
-        _this = this;
-      if (this.isExpired()) {
-        this.registerEvent(function() {
-          return _this.objectList.remove(_this);
-        });
-        return;
-      }
-      t = this.objectList.find(function(model) {
-        return (model instanceof App.Model.Monster) && _this.within(model);
-      });
-      if (t != null) {
-        if (t != null) {
-          t.trigger('hit', this);
-        }
-        this.objectList.remove(this);
-      }
-      this.x = this.x + this.x_speed;
-      return this.y = this.y + this.y_speed;
+    Bullet.prototype.destroy = function() {
+      Bullet.__super__.destroy.apply(this, arguments);
+      delete this.x_speed;
+      return delete this.y_speed;
     };
 
-    Bullet.prototype.initialize = function() {
-      this.floor = App.Model.currentFloor();
-      return this.objectList = this.floor.objectList;
+    Bullet.prototype.enterframe = function() {
+      if (this.isExpired()) {
+        this.objectList.remove(this);
+        this.destroy();
+        return;
+      }
+      this.searchEnemy();
+      this.x = this.x + this.x_speed;
+      return this.y = this.y + this.y_speed;
     };
 
     Bullet.prototype.within = function(other) {
@@ -264,6 +260,20 @@ _module_('App.Model', function(App, Model) {
 
     Bullet.prototype.isExpired = function() {
       return this.cnt > App.instance.fps * 0.5;
+    };
+
+    Bullet.prototype.searchEnemy = function() {
+      var t,
+        _this = this;
+      t = this.objectList.find(function(model) {
+        return (model instanceof App.Model.Monster) && _this.within(model);
+      });
+      if (t != null) {
+        if (t != null) {
+          t.trigger('hit', this);
+        }
+        return this.objectList.remove(this);
+      }
     };
 
     return Bullet;
@@ -275,7 +285,7 @@ var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments)
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-_module_('App.Model', function(App, Model) {
+_module_('App.Model', function() {
   this.Floor = (function(_super) {
 
     __extends(Floor, _super);
@@ -286,7 +296,7 @@ _module_('App.Model', function(App, Model) {
       this.enterframe = __bind(this.enterframe, this);
       Floor.__super__.constructor.apply(this, arguments);
       this.player = null;
-      this.objectList = new Model.ObjectList([]);
+      this.objectList = new App.Model.ObjectList([]);
       this.on('enterframe', this.enterframe);
     }
 
@@ -334,9 +344,9 @@ _module_('App.Model', function(App, Model) {
       Game.__super__.constructor.apply(this, arguments);
       App.game = this;
       this.floors = [];
-      this.floors.push(new Model.Floor);
+      this.floors.push(new App.Model.Floor);
       this.depth = 0;
-      this.player = new Model.Player;
+      this.player = new App.Model.Player;
       this.currentFloor().join(this.player);
     }
 
@@ -355,7 +365,7 @@ _module_('App.Model', function(App, Model) {
 
     __extends(ObjectList, _super);
 
-    ObjectList.prototype.model = Model.Entity;
+    ObjectList.prototype.model = App.Model.Entity;
 
     function ObjectList() {
       ObjectList.__super__.constructor.apply(this, arguments);
@@ -453,13 +463,6 @@ _module_('App.Model', function(App, Model) {
 
     __extends(Monster, _super);
 
-    function Monster() {
-      this.hit = __bind(this.hit, this);
-
-      this.initialize = __bind(this.initialize, this);
-      return Monster.__super__.constructor.apply(this, arguments);
-    }
-
     Monster.prototype.defaults = function() {
       return _.extend(Monster.__super__.defaults.apply(this, arguments), {
         move_speed: 0.5,
@@ -467,20 +470,20 @@ _module_('App.Model', function(App, Model) {
       });
     };
 
-    Monster.prototype.initialize = function() {
-      this.floor = App.Model.currentFloor();
+    function Monster() {
+      this.hit = __bind(this.hit, this);
+      Monster.__super__.constructor.apply(this, arguments);
       this.objectList = this.floor.objectList;
-      return this.on('hit', this.hit);
-    };
+      this.on('hit', this.hit);
+    }
 
     Monster.prototype.hit = function(other) {
       this.set({
         hp: this.hp - 1
       });
       if (this.hp <= 0) {
-        this.objectList.remove(this);
+        return this.objectList.remove(this);
       }
-      return p('hit', this.cid, this.hp);
     };
 
     return Monster;
@@ -536,16 +539,13 @@ _module_('App.Model', function(App, Model) {
     };
 
     Player.prototype.click_left = function(_arg) {
-      var x, y,
-        _this = this;
+      var x, y;
       x = _arg.x, y = _arg.y;
-      return this.registerEvent(function() {
-        return _this.floor.objectList.add(new Model.Bullet({
-          x: _this.x,
-          y: _this.y,
-          rad: atan2(y - _this.y, x - _this.x)
-        }));
-      });
+      return this.floor.objectList.add(new Model.Bullet({
+        x: this.x,
+        y: this.y,
+        rad: atan2(y - this.y, x - this.x)
+      }));
     };
 
     Player.prototype.moveBy = function(dx, dy) {
@@ -688,7 +688,8 @@ _module_("App.Scene", function(App, Scene) {
         if ((_ref = target.model) != null) {
           _ref.off();
         }
-        return App.game.off(null, null, target);
+        App.game.off(null, null, target);
+        return target = null;
       }
     };
 

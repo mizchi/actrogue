@@ -5,8 +5,8 @@ _module_ 'App.Model', (App, Model)->
         move_speed: 0.5
         hp: 5
 
-    initialize: =>
-      @floor = App.Model.currentFloor()
+    constructor: ->
+      super
       @objectList = @floor.objectList
       @on 'hit', @hit
 
@@ -14,6 +14,6 @@ _module_ 'App.Model', (App, Model)->
       @set hp: @hp - 1
       if @hp <= 0
         @objectList.remove @
-      p 'hit', @cid, @hp
+      # p 'hit', @cid, @hp
 
 
