@@ -8,6 +8,9 @@ class App.Core extends enchant.Core
     @keybind('S'.charCodeAt(0), 's')
     @keybind('D'.charCodeAt(0), 'd')
 
+    @keybind('E'.charCodeAt(0), 'e')
+    @keybind('Q'.charCodeAt(0), 'q')
+
     @onload = ->
       @pushScene new App.Scene.Field
 
