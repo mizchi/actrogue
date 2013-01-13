@@ -4,6 +4,8 @@ window.onmousemove = (e) -> window.MouseEvent = e
 window.App =
   Scene: {}
   Entity: {}
+  Skill: {}
+
 window.app = {}
 
 App.Entity.GroupId =

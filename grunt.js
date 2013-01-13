@@ -27,6 +27,7 @@ module.exports = function( grunt ) {
         src: [
           "lib/util/*.js",
           "lib/initialize.js",
+          "lib/skills/base.js",
           "lib/shapes/*.js",
           "lib/entities/mover.js",
           "lib/**/*.js"

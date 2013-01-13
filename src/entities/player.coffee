@@ -1,43 +1,26 @@
-class Skill
-class SingleShot extends Skill
-  constructor: (@actor)->
-  exec: (x, y) ->
-    move_speed = 16
-    bullet = new App.Entity.Bullet
-      rad: Math.atan2(y - @actor.y, x - @actor.x)
-      move_speed: move_speed
-      x: @actor.x
-      y: @actor.y
-      group_id: @group_id
-    @actor.parentNode.addChild bullet
-
-class MultiShot extends Skill
-  constructor: (@actor)->
-  exec: (x, y) ->
-    for i in [1..100]
-      blur_x = i*(9*Math.random()-4)
-      blur_y = i*(9*Math.random()-4)
-      move_speed = 16 - Math.random() * 8
-      bullet = new App.Entity.Bullet
-        rad: Math.atan2(y - @actor.y + blur_y, x - @actor.x + blur_x)
-        move_speed: move_speed
-        x: @actor.x
-        y: @actor.y
-        group_id: @group_id
-      @actor.parentNode.addChild bullet
-
 class App.Entity.ISkillSelector
   required:
     skills: Array
+    age: Number
 
   initialize: ->
     @_skill_index = 0
+    @_last_switch_age = @age
+
+  _keyWaitEnough: ->
+    @age - @_last_switch_age > 0.3*app.fps
+
+  _updateKeyWait: ->
+    @_last_switch_age = @age
 
   switchNextSkill: ->
-    if @_skill_index + 1 < @skills.length
-      @_skill_index += 1
-    else
-      @_skill_index = 0
+    if @_keyWaitEnough()
+      @_updateKeyWait()
+
+      if @_skill_index + 1 < @skills.length
+        @_skill_index += 1
+      else
+        @_skill_index = 0
 
   switchPrevSkill: ->
     if @_skill_index - 1 >= 0
@@ -56,8 +39,8 @@ class App.Entity.Player extends App.Entity.Mover
     @group_id = App.Entity.GroupId.Player
     @move_speed = 6
     @skills = [
-      new MultiShot(@)
-      new SingleShot(@)
+      new App.Skill.MultiShot(@)
+      new App.Skill.SingleShot(@)
     ]
     mixin @, App.Entity.ISkillSelector
     p @_selectedSkill()

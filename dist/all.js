@@ -139,7 +139,8 @@ window.onmousemove = function(e) {
 
 window.App = {
   Scene: {},
-  Entity: {}
+  Entity: {},
+  Skill: {}
 };
 
 window.app = {};
@@ -153,6 +154,19 @@ window.onload = function() {
   enchant();
   return new App.Core(320, 240);
 };
+
+
+App.Skill.Base = (function() {
+
+  function Base(actor) {
+    this.actor = actor;
+  }
+
+  Base.prototype.fire = function(x, y) {};
+
+  return Base;
+
+})();
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -475,92 +489,40 @@ App.Entity.Mouse = (function(_super) {
 
 })(App.Entity.Mover);
 
-var MultiShot, SingleShot, Skill,
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-Skill = (function() {
-
-  function Skill() {}
-
-  return Skill;
-
-})();
-
-SingleShot = (function(_super) {
-
-  __extends(SingleShot, _super);
-
-  function SingleShot(actor) {
-    this.actor = actor;
-  }
-
-  SingleShot.prototype.exec = function(x, y) {
-    var bullet, move_speed;
-    move_speed = 16;
-    bullet = new App.Entity.Bullet({
-      rad: Math.atan2(y - this.actor.y, x - this.actor.x),
-      move_speed: move_speed,
-      x: this.actor.x,
-      y: this.actor.y,
-      group_id: this.group_id
-    });
-    return this.actor.parentNode.addChild(bullet);
-  };
-
-  return SingleShot;
-
-})(Skill);
-
-MultiShot = (function(_super) {
-
-  __extends(MultiShot, _super);
-
-  function MultiShot(actor) {
-    this.actor = actor;
-  }
-
-  MultiShot.prototype.exec = function(x, y) {
-    var blur_x, blur_y, bullet, i, move_speed, _i, _results;
-    _results = [];
-    for (i = _i = 1; _i <= 100; i = ++_i) {
-      blur_x = i * (9 * Math.random() - 4);
-      blur_y = i * (9 * Math.random() - 4);
-      move_speed = 16 - Math.random() * 8;
-      bullet = new App.Entity.Bullet({
-        rad: Math.atan2(y - this.actor.y + blur_y, x - this.actor.x + blur_x),
-        move_speed: move_speed,
-        x: this.actor.x,
-        y: this.actor.y,
-        group_id: this.group_id
-      });
-      _results.push(this.actor.parentNode.addChild(bullet));
-    }
-    return _results;
-  };
-
-  return MultiShot;
-
-})(Skill);
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 App.Entity.ISkillSelector = (function() {
 
   function ISkillSelector() {}
 
   ISkillSelector.prototype.required = {
-    skills: Array
+    skills: Array,
+    age: Number
   };
 
   ISkillSelector.prototype.initialize = function() {
-    return this._skill_index = 0;
+    this._skill_index = 0;
+    return this._last_switch_age = this.age;
+  };
+
+  ISkillSelector.prototype._keyWaitEnough = function() {
+    return this.age - this._last_switch_age > 0.3 * app.fps;
+  };
+
+  ISkillSelector.prototype._updateKeyWait = function() {
+    return this._last_switch_age = this.age;
   };
 
   ISkillSelector.prototype.switchNextSkill = function() {
-    if (this._skill_index + 1 < this.skills.length) {
-      return this._skill_index += 1;
-    } else {
-      return this._skill_index = 0;
+    if (this._keyWaitEnough()) {
+      this._updateKeyWait();
+      if (this._skill_index + 1 < this.skills.length) {
+        return this._skill_index += 1;
+      } else {
+        return this._skill_index = 0;
+      }
     }
   };
 
@@ -593,7 +555,7 @@ App.Entity.Player = (function(_super) {
     Player.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Player;
     this.move_speed = 6;
-    this.skills = [new MultiShot(this), new SingleShot(this)];
+    this.skills = [new App.Skill.MultiShot(this), new App.Skill.SingleShot(this)];
     mixin(this, App.Entity.ISkillSelector);
     p(this._selectedSkill());
     this.on('fire', this.fire);
@@ -692,3 +654,65 @@ App.Scene.Field = (function(_super) {
   return Field;
 
 })(enchant.Scene);
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Skill.MultiShot = (function(_super) {
+
+  __extends(MultiShot, _super);
+
+  function MultiShot() {
+    return MultiShot.__super__.constructor.apply(this, arguments);
+  }
+
+  MultiShot.prototype.exec = function(x, y) {
+    var blur_x, blur_y, bullet, i, move_speed, _i, _results;
+    _results = [];
+    for (i = _i = 1; _i <= 100; i = ++_i) {
+      blur_x = i * (9 * Math.random() - 4);
+      blur_y = i * (9 * Math.random() - 4);
+      move_speed = 16 - Math.random() * 8;
+      bullet = new App.Entity.Bullet({
+        rad: Math.atan2(y - this.actor.y + blur_y, x - this.actor.x + blur_x),
+        move_speed: move_speed,
+        x: this.actor.x,
+        y: this.actor.y,
+        group_id: this.group_id
+      });
+      _results.push(this.actor.parentNode.addChild(bullet));
+    }
+    return _results;
+  };
+
+  return MultiShot;
+
+})(App.Skill.Base);
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Skill.SingleShot = (function(_super) {
+
+  __extends(SingleShot, _super);
+
+  function SingleShot() {
+    return SingleShot.__super__.constructor.apply(this, arguments);
+  }
+
+  SingleShot.prototype.exec = function(x, y) {
+    var bullet, move_speed;
+    move_speed = 16;
+    bullet = new App.Entity.Bullet({
+      rad: Math.atan2(y - this.actor.y, x - this.actor.x),
+      move_speed: move_speed,
+      x: this.actor.x,
+      y: this.actor.y,
+      group_id: this.group_id
+    });
+    return this.actor.parentNode.addChild(bullet);
+  };
+
+  return SingleShot;
+
+})(App.Skill.Base);
