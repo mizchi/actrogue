@@ -26,8 +26,9 @@ module.exports = function( grunt ) {
       app: {
         src: [
           "lib/util/*.js",
-          "lib/model/entity.js",
           "lib/initialize.js",
+          "lib/shapes/*.js",
+          "lib/entities/mover.js",
           "lib/**/*.js"
         ],
         dest: "dist/all.js"
