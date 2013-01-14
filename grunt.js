@@ -18,7 +18,8 @@ module.exports = function( grunt ) {
         src: [
           "components/underscore/underscore-min.js",
           "components/backbone/backbone-min.js",
-          "components/enchant/enchant.min.js"
+          "components/enchant/enchant.min.js",
+          "components/rot/rot.js"
         ],
         dest: "dist/vendor.js"
       },

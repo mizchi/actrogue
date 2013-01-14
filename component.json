@@ -5,6 +5,7 @@
         "backbone": "latest",
         "underscore": "latest",
         "enchant": "git://github.com/wise9/enchant.js.git",
+        "rot": "git://github.com/ondras/rot.js.git",
         "requirejs": "2.1.1"
     }
 }
