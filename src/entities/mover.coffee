@@ -49,6 +49,7 @@ class App.Entity.ITracer
     nx = @_until @x, @x+dx, max_x
     ny = @_until @y, @y+dy, max_y
     if nx is @x and ny is @y then return false
+
     @x = nx
     @y = ny
     return true

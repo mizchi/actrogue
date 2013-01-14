@@ -437,17 +437,31 @@ Position = (function() {
 
 })();
 
-App.Entity.IModalPattern = (function() {
+App.Entity.IHitPoint = (function() {
 
-  function IModalPattern() {}
+  function IHitPoint() {}
 
-  IModalPattern.required = {
-    mode: String
+  IHitPoint.required = {
+    max_hp: Number
   };
 
-  IModalPattern.prototype.guess = function() {};
+  IHitPoint.prototype.initialize = function() {
+    return this.hp = this.max_hp;
+  };
 
-  return IModalPattern;
+  IHitPoint.prototype.damage = function(point) {
+    return this.hp = Math.max(this.hp - point, 0);
+  };
+
+  IHitPoint.prototype.isDead = function() {
+    return this.hp <= 0;
+  };
+
+  IHitPoint.prototype.isAlive = function() {
+    return !this.isDead();
+  };
+
+  return IHitPoint;
 
 })();
 
@@ -457,12 +471,26 @@ App.Entity.Monster = (function(_super) {
 
   function Monster() {
     this.enterframe = __bind(this.enterframe, this);
+
+    this.hit = __bind(this.hit, this);
     Monster.__super__.constructor.apply(this, arguments);
     this.destination = null;
     this.move_speed = 3;
     this.group_id = App.Entity.GroupId.Enemy;
     this.mode = 'idle';
+    this.on('hit', this.hit);
+    this.max_hp = 10;
+    mixin(this, App.Entity.IHitPoint);
   }
+
+  Monster.prototype.hit = function(_arg) {
+    var other;
+    other = _arg.other;
+    this.damage(2);
+    if (this.isDead()) {
+      return this.remove();
+    }
+  };
 
   Monster.prototype.setRandomDestination = function() {
     return this.setDestination(this.x + Math.random() * 10 - 5, this.y + Math.random() * 10 - 5);
@@ -600,7 +628,7 @@ App.Entity.Player = (function(_super) {
     Player.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Player;
     this.move_speed = 6;
-    this.skills = [new App.Skill.SingleShot(this), new App.Skill.MultiShot(this)];
+    this.skills = [new App.Skill.MultiShot(this), new App.Skill.SingleShot(this)];
     mixin(this, App.Entity.ISkillSelector);
     this.on('fire', this.fire);
   }
@@ -713,7 +741,7 @@ App.Skill.MultiShot = (function(_super) {
   MultiShot.prototype.exec = function(x, y) {
     var blur_x, blur_y, bullet, i, move_speed, _i, _results;
     _results = [];
-    for (i = _i = 1; _i <= 100; i = ++_i) {
+    for (i = _i = 1; _i <= 10; i = ++_i) {
       blur_x = i * (9 * Math.random() - 4);
       blur_y = i * (9 * Math.random() - 4);
       move_speed = 16 - Math.random() * 8;

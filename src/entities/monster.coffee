@@ -1,12 +1,18 @@
 class Position
   constructor: (@x, @y) ->
 
-class App.Entity.IModalPattern
+class App.Entity.IHitPoint
   @required:
-    mode: String
+    max_hp: Number
 
-  guess: ->
+  initialize: ->
+    @hp = @max_hp
 
+  damage: (point) ->
+    @hp = Math.max @hp - point, 0
+
+  isDead: -> @hp <= 0
+  isAlive: -> not @isDead()
 
 class App.Entity.Monster extends App.Entity.Mover
   constructor: ->
@@ -16,6 +22,14 @@ class App.Entity.Monster extends App.Entity.Mover
     @group_id = App.Entity.GroupId.Enemy
 
     @mode = 'idle'
+    @on 'hit', @hit
+
+    @max_hp = 10
+    mixin @, App.Entity.IHitPoint
+
+  hit: ({other}) =>
+    @damage(2)
+    if @isDead() then @remove()
 
   setRandomDestination: ->
     @setDestination(
