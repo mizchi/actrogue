@@ -1,4 +1,5 @@
 class App.Entity.Bullet extends App.Entity.Mover
+  passable: true
   constructor: ({x, y, rad, move_speed, group_id}) ->
     super
     @x = x
@@ -29,3 +30,4 @@ class App.Entity.Bullet extends App.Entity.Mover
       event = new enchant.Event("hit")
       event.other = @
       target.dispatchEvent event
+      @remove()

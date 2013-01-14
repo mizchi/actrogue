@@ -217,7 +217,8 @@ App.Entity.ISearcher = (function() {
   function ISearcher() {}
 
   ISearcher.required = {
-    group_id: Number
+    group_id: Number,
+    sight_range: Number
   };
 
   ISearcher.prototype.find = function(group_id, range) {
@@ -234,6 +235,10 @@ App.Entity.ISearcher = (function() {
         return false;
       }
     });
+  };
+
+  ISearcher.prototype.findInSight = function(group_id) {
+    return this.find(group_id, this.sight_range);
   };
 
   return ISearcher;
@@ -291,11 +296,30 @@ App.Entity.ITracer = (function() {
   };
 
   ITracer.prototype.go = function(dx, dy, max_x, max_y) {
-    var nx, ny;
+    var inhibitor, nx, ny, _ref,
+      _this = this;
     nx = this._until(this.x, this.x + dx, max_x);
     ny = this._until(this.y, this.y + dy, max_y);
     if (nx === this.x && ny === this.y) {
       return false;
+    }
+    if (!this.passable) {
+      inhibitor = _.find((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
+        if (i === _this) {
+          return false;
+        }
+        if (i.passable === false) {
+          if (Math.abs(nx - i.x) < 8) {
+            if (Math.abs(ny - i.y) < 8) {
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+      if (inhibitor != null) {
+        return false;
+      }
     }
     this.x = nx;
     this.y = ny;
@@ -325,6 +349,7 @@ App.Entity.Mover = (function(_super) {
     this.group_id = 0;
     this.direction = 0;
     this.move_speed = 1;
+    this.sight_range = 50;
     this.on('enterframe', this.enterframe);
     this.draw();
     mixin(this, App.Entity.ITracer, App.Entity.ISearcher, App.Entity.IDrawer);
@@ -374,6 +399,8 @@ App.Entity.Bullet = (function(_super) {
 
   __extends(Bullet, _super);
 
+  Bullet.prototype.passable = true;
+
   function Bullet(_arg) {
     var dx, dy, group_id, move_speed, rad, range, x, y;
     x = _arg.x, y = _arg.y, rad = _arg.rad, move_speed = _arg.move_speed, group_id = _arg.group_id;
@@ -413,7 +440,8 @@ App.Entity.Bullet = (function(_super) {
     if (target) {
       event = new enchant.Event("hit");
       event.other = this;
-      return target.dispatchEvent(event);
+      target.dispatchEvent(event);
+      return this.remove();
     }
   };
 
@@ -469,6 +497,8 @@ App.Entity.Monster = (function(_super) {
 
   __extends(Monster, _super);
 
+  Monster.prototype.passable = false;
+
   function Monster() {
     this.enterframe = __bind(this.enterframe, this);
 
@@ -476,6 +506,7 @@ App.Entity.Monster = (function(_super) {
     Monster.__super__.constructor.apply(this, arguments);
     this.destination = null;
     this.move_speed = 3;
+    this.sight_range = 50;
     this.group_id = App.Entity.GroupId.Enemy;
     this.mode = 'idle';
     this.on('hit', this.hit);
@@ -493,16 +524,28 @@ App.Entity.Monster = (function(_super) {
   };
 
   Monster.prototype.setRandomDestination = function() {
-    return this.setDestination(this.x + Math.random() * 10 - 5, this.y + Math.random() * 10 - 5);
+    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
   };
 
   Monster.prototype.enterframe = function() {
     var target;
     Monster.__super__.enterframe.apply(this, arguments);
     switch (this.mode) {
+      case "idle":
+        target = this.findInSight(App.Entity.GroupId.Player);
+        if (target) {
+          this.mode = "trace";
+          return this.setDestination(target.x, target.y);
+        } else {
+          if (Math.random() < 1 / app.fps) {
+            this.mode = "wander";
+            return this.setRandomDestination();
+          }
+        }
+        break;
       case "trace":
         if (!this.goAhead()) {
-          target = this.find(App.Entity.GroupId.Player, 100);
+          target = this.findInSight(App.Entity.GroupId.Player);
           if (target) {
             return this.setDestination(target.x, target.y);
           } else {
@@ -514,16 +557,6 @@ App.Entity.Monster = (function(_super) {
       case "wander":
         if (!this.goAhead()) {
           return this.mode = "idle";
-        }
-        break;
-      case "idle":
-        target = this.find(App.Entity.GroupId.Player, 100);
-        if (target) {
-          this.mode = "trace";
-          return this.setDestination(target.x, target.y);
-        } else {
-          this.mode = "wander";
-          return this.setRandomDestination();
         }
     }
   };
@@ -623,11 +656,14 @@ App.Entity.Player = (function(_super) {
 
   __extends(Player, _super);
 
+  Player.prototype.passable = false;
+
   function Player() {
     this.enterframe = __bind(this.enterframe, this);
     Player.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Player;
     this.move_speed = 6;
+    this.sight_range = 10;
     this.skills = [new App.Skill.MultiShot(this), new App.Skill.SingleShot(this)];
     mixin(this, App.Entity.ISkillSelector);
     this.on('fire', this.fire);
@@ -739,11 +775,12 @@ App.Skill.MultiShot = (function(_super) {
   }
 
   MultiShot.prototype.exec = function(x, y) {
-    var blur_x, blur_y, bullet, i, move_speed, _i, _results;
+    var blur_x, blur_y, bullet, i, move_speed, num, _i, _results;
+    num = 10;
     _results = [];
-    for (i = _i = 1; _i <= 10; i = ++_i) {
-      blur_x = i * (9 * Math.random() - 4);
-      blur_y = i * (9 * Math.random() - 4);
+    for (i = _i = 1; 1 <= num ? _i <= num : _i >= num; i = 1 <= num ? ++_i : --_i) {
+      blur_x = 4 * (9 * Math.random() - 4);
+      blur_y = 4 * (9 * Math.random() - 4);
       move_speed = 16 - Math.random() * 8;
       bullet = new App.Entity.Bullet({
         rad: Math.atan2(y - this.actor.y + blur_y, x - this.actor.x + blur_x),

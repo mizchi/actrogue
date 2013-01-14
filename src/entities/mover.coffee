@@ -1,6 +1,7 @@
 class App.Entity.ISearcher
   @required:
     group_id: Number
+    sight_range: Number
 
   find: (group_id, range) ->
     return false unless @parentNode?
@@ -12,6 +13,9 @@ class App.Entity.ISearcher
           and Math.abs(@y - node.y) < range
       else
         false
+
+  findInSight: (group_id) ->
+    @find(group_id, @sight_range)
 
 class App.Entity.IDrawer
   draw: ->
@@ -48,10 +52,30 @@ class App.Entity.ITracer
   go: (dx, dy, max_x, max_y) ->
     nx = @_until @x, @x+dx, max_x
     ny = @_until @y, @y+dy, max_y
+
+    # 動いていない
     if nx is @x and ny is @y then return false
+
+    # 自分自身が貫通属性でない
+    unless @passable
+      # エンティティに接触
+      inhibitor = _.find @parentNode?.childNodes, (i) =>
+        # 自分自身なら無視
+        if i is @ then return false
+        # 通行不可属性なら true
+        if i.passable is false
+          if Math.abs(nx - i.x) < 8
+            if Math.abs(ny - i.y) < 8
+              return true
+        false
+      if inhibitor? then return false
+
+    # マップに接触
+    # TODO
 
     @x = nx
     @y = ny
+
     return true
 
   _until: (value, next, dest) ->
@@ -66,6 +90,7 @@ class App.Entity.Mover extends enchant.Group
     @group_id = 0
     @direction = 0
     @move_speed = 1 # 移動速度
+    @sight_range = 50
     @on 'enterframe', @enterframe
     @draw()
 

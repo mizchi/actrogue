@@ -34,10 +34,13 @@ class App.Entity.ISkillSelector
     @_selectedSkill().exec(e.x, e.y)
 
 class App.Entity.Player extends App.Entity.Mover
+  passable: false
+
   constructor: ->
     super
     @group_id = App.Entity.GroupId.Player
     @move_speed = 6
+    @sight_range = 10
     @skills = [
       new App.Skill.MultiShot(@)
       new App.Skill.SingleShot(@)

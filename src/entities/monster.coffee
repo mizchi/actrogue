@@ -15,10 +15,12 @@ class App.Entity.IHitPoint
   isAlive: -> not @isDead()
 
 class App.Entity.Monster extends App.Entity.Mover
+  passable: false
   constructor: ->
     super
     @destination = null
     @move_speed = 3
+    @sight_range = 50
     @group_id = App.Entity.GroupId.Enemy
 
     @mode = 'idle'
@@ -33,15 +35,25 @@ class App.Entity.Monster extends App.Entity.Mover
 
   setRandomDestination: ->
     @setDestination(
-      @x + Math.random() * 10 - 5,
-      @y + Math.random() * 10 - 5)
+      @x + (Math.random() - 0.5) * @sight_range,
+      @y + (Math.random() - 0.5) * @sight_range)
 
   enterframe: =>
     super
     switch @mode
+      when "idle" #=> trace, wander
+        target = @findInSight App.Entity.GroupId.Player
+        if target
+          @mode = "trace"
+          @setDestination(target.x, target.y)
+        else
+          if Math.random() < 1/app.fps
+            @mode = "wander"
+            @setRandomDestination()
+
       when "trace" #=> idle
         unless @goAhead()
-          target = @find App.Entity.GroupId.Player, 100
+          target = @findInSight App.Entity.GroupId.Player
           if target
             @setDestination(target.x, target.y)
           else
@@ -51,15 +63,6 @@ class App.Entity.Monster extends App.Entity.Mover
       when "wander" #=> trace
         unless @goAhead()
           @mode = "idle"
-
-      when "idle" #=> trace, wander
-        target = @find App.Entity.GroupId.Player, 100
-        if target
-          @mode = "trace"
-          @setDestination(target.x, target.y)
-        else
-          @mode = "wander"
-          @setRandomDestination()
 
   draw: ->
     @addChild new App.Entity.Circle 0, 0, 8, 'red'
