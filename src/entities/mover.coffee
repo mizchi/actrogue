@@ -2,10 +2,11 @@ class App.Entity.ISearcher
   @required:
     group_id: Number
 
-  findEnemy: (range) ->
+  find: (group_id, range) ->
+    return false unless @parentNode?
     _.find @parentNode.childNodes, (node) =>
       if node?.group_id?
-        if node.group_id isnt @group_id
+        if node.group_id is group_id
           node.group_id \
           and Math.abs(@x - node.x) < range \
           and Math.abs(@y - node.y) < range

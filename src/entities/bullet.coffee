@@ -3,7 +3,7 @@ class App.Entity.Bullet extends App.Entity.Mover
     super
     @x = x
     @y = y
-    @move_speed = move_speed ? 16
+    @move_speed = move_speed ? 8
     @lifetime = 0.8
     @group_id = group_id ? 0
 
@@ -22,6 +22,10 @@ class App.Entity.Bullet extends App.Entity.Mover
 
   enterframe: =>
     @goAhead()
-    @findEnemy(18)
     if @isDead() then @remove()
 
+    target = @find(App.Entity.GroupId.Enemy, 8)
+    if target
+      event = new enchant.Event("hit")
+      event.other = @
+      target.dispatchEvent event

@@ -39,12 +39,10 @@ class App.Entity.Player extends App.Entity.Mover
     @group_id = App.Entity.GroupId.Player
     @move_speed = 6
     @skills = [
-      new App.Skill.MultiShot(@)
       new App.Skill.SingleShot(@)
+      new App.Skill.MultiShot(@)
     ]
     mixin @, App.Entity.ISkillSelector
-    p @_selectedSkill()
-
     @on 'fire', @fire
 
   draw: ->

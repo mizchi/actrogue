@@ -220,11 +220,14 @@ App.Entity.ISearcher = (function() {
     group_id: Number
   };
 
-  ISearcher.prototype.findEnemy = function(range) {
+  ISearcher.prototype.find = function(group_id, range) {
     var _this = this;
+    if (this.parentNode == null) {
+      return false;
+    }
     return _.find(this.parentNode.childNodes, function(node) {
       if ((node != null ? node.group_id : void 0) != null) {
-        if (node.group_id !== _this.group_id) {
+        if (node.group_id === group_id) {
           return node.group_id && Math.abs(_this.x - node.x) < range && Math.abs(_this.y - node.y) < range;
         }
       } else {
@@ -352,6 +355,7 @@ App.Core = (function(_super) {
     this.keybind('D'.charCodeAt(0), 'd');
     this.keybind('E'.charCodeAt(0), 'e');
     this.keybind('Q'.charCodeAt(0), 'q');
+    this.preload(["img/chara0.png"]);
     this.onload = function() {
       return this.pushScene(new App.Scene.Field);
     };
@@ -378,7 +382,7 @@ App.Entity.Bullet = (function(_super) {
     Bullet.__super__.constructor.apply(this, arguments);
     this.x = x;
     this.y = y;
-    this.move_speed = move_speed != null ? move_speed : 16;
+    this.move_speed = move_speed != null ? move_speed : 8;
     this.lifetime = 0.8;
     this.group_id = group_id != null ? group_id : 0;
     range = this.getRange();
@@ -400,10 +404,16 @@ App.Entity.Bullet = (function(_super) {
   };
 
   Bullet.prototype.enterframe = function() {
+    var event, target;
     this.goAhead();
-    this.findEnemy(18);
     if (this.isDead()) {
-      return this.remove();
+      this.remove();
+    }
+    target = this.find(App.Entity.GroupId.Enemy, 8);
+    if (target) {
+      event = new enchant.Event("hit");
+      event.other = this;
+      return target.dispatchEvent(event);
     }
   };
 
@@ -427,6 +437,20 @@ Position = (function() {
 
 })();
 
+App.Entity.IModalPattern = (function() {
+
+  function IModalPattern() {}
+
+  IModalPattern.required = {
+    mode: String
+  };
+
+  IModalPattern.prototype.guess = function() {};
+
+  return IModalPattern;
+
+})();
+
 App.Entity.Monster = (function(_super) {
 
   __extends(Monster, _super);
@@ -435,7 +459,9 @@ App.Entity.Monster = (function(_super) {
     this.enterframe = __bind(this.enterframe, this);
     Monster.__super__.constructor.apply(this, arguments);
     this.destination = null;
+    this.move_speed = 3;
     this.group_id = App.Entity.GroupId.Enemy;
+    this.mode = 'idle';
   }
 
   Monster.prototype.setRandomDestination = function() {
@@ -443,15 +469,34 @@ App.Entity.Monster = (function(_super) {
   };
 
   Monster.prototype.enterframe = function() {
-    var success;
+    var target;
     Monster.__super__.enterframe.apply(this, arguments);
-    if (!this.hasDestination()) {
-      return this.setRandomDestination();
-    } else {
-      success = this.goAhead();
-      if (!success) {
-        return this.removeDestination();
-      }
+    switch (this.mode) {
+      case "trace":
+        if (!this.goAhead()) {
+          target = this.find(App.Entity.GroupId.Player, 100);
+          if (target) {
+            return this.setDestination(target.x, target.y);
+          } else {
+            this.removeDestination();
+            return this.mode = "idle";
+          }
+        }
+        break;
+      case "wander":
+        if (!this.goAhead()) {
+          return this.mode = "idle";
+        }
+        break;
+      case "idle":
+        target = this.find(App.Entity.GroupId.Player, 100);
+        if (target) {
+          this.mode = "trace";
+          return this.setDestination(target.x, target.y);
+        } else {
+          this.mode = "wander";
+          return this.setRandomDestination();
+        }
     }
   };
 
@@ -555,9 +600,8 @@ App.Entity.Player = (function(_super) {
     Player.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Player;
     this.move_speed = 6;
-    this.skills = [new App.Skill.MultiShot(this), new App.Skill.SingleShot(this)];
+    this.skills = [new App.Skill.SingleShot(this), new App.Skill.MultiShot(this)];
     mixin(this, App.Entity.ISkillSelector);
-    p(this._selectedSkill());
     this.on('fire', this.fire);
   }
 
