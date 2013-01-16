@@ -72,10 +72,11 @@ class App.Entity.ITracer
 
     # マップに接触
     # TODO
-
-    @x = nx
-    @y = ny
-
+    if @parentNode?.map.isWall(nx, ny)
+      return false
+    else
+      @x = nx
+      @y = ny
     return true
 
   _until: (value, next, dest) ->

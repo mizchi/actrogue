@@ -22,7 +22,7 @@ class App.Entity.Bullet extends App.Entity.Mover
   isDead: -> @age/app.fps > @lifetime
 
   enterframe: =>
-    @goAhead()
+    unless @goAhead() then @remove()
     if @isDead() then @remove()
 
     target = @find(App.Entity.GroupId.Enemy, 8)

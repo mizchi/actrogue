@@ -26,6 +26,9 @@ class App.Entity.Map extends enchant.Sprite
     map.create (x, y, val) =>
       @hitmap[x][y] = val
 
+  isWall: (x, y) ->
+    !! @hitmap[~~(y / @cell_size)][~~(x / @cell_size)]
+
   getRandomPssable: ->
     x = ~~(Math.random() * @cell_x)
     y = ~~(Math.random() * @cell_y)
@@ -51,20 +54,14 @@ class ObjectBoard extends enchant.Group
     super
     @createMap()
     @addPlayer()
-
-    # @addChild new Label('0')
-
     @on 'enterframe', @enterframe
 
   addPlayer: ->
     @player = new App.Entity.Player
-
     {x, y} = @map.getRandomPssable()
-    p x , y
     @player.x = x
     @player.y = y
     @addChild @player
-
 
   createMap: ->
     @map = new App.Entity.Map 32,32
@@ -77,8 +74,9 @@ class ObjectBoard extends enchant.Group
     items = _.select @childNodes, (i) -> i instanceof App.Entity.Monster
     if items.length < 10
       monster = new App.Entity.Monster
-      monster.x = Math.random() * 100
-      monster.y = Math.random() * 100
+      {x, y} = @map.getRandomPssable()
+      monster.x = x
+      monster.y = y
       @addChild monster
 
 class App.Scene.Field extends enchant.Scene

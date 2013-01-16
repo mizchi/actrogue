@@ -293,7 +293,7 @@ App.Entity.ITracer = (function() {
   };
 
   ITracer.prototype.go = function(dx, dy, max_x, max_y) {
-    var inhibitor, nx, ny, _ref,
+    var inhibitor, nx, ny, _ref, _ref1,
       _this = this;
     nx = this._until(this.x, this.x + dx, max_x);
     ny = this._until(this.y, this.y + dy, max_y);
@@ -318,8 +318,12 @@ App.Entity.ITracer = (function() {
         return false;
       }
     }
-    this.x = nx;
-    this.y = ny;
+    if ((_ref1 = this.parentNode) != null ? _ref1.map.isWall(nx, ny) : void 0) {
+      return false;
+    } else {
+      this.x = nx;
+      this.y = ny;
+    }
     return true;
   };
 
@@ -430,7 +434,9 @@ App.Entity.Bullet = (function(_super) {
 
   Bullet.prototype.enterframe = function() {
     var event, target;
-    this.goAhead();
+    if (!this.goAhead()) {
+      this.remove();
+    }
     if (this.isDead()) {
       this.remove();
     }
@@ -748,6 +754,10 @@ App.Entity.Map = (function(_super) {
     });
   };
 
+  Map.prototype.isWall = function(x, y) {
+    return !!this.hitmap[~~(y / this.cell_size)][~~(x / this.cell_size)];
+  };
+
   Map.prototype.getRandomPssable = function() {
     var x, y;
     x = ~~(Math.random() * this.cell_x);
@@ -801,7 +811,6 @@ ObjectBoard = (function(_super) {
     var x, y, _ref;
     this.player = new App.Entity.Player;
     _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
-    p(x, y);
     this.player.x = x;
     this.player.y = y;
     return this.addChild(this.player);
@@ -817,14 +826,15 @@ ObjectBoard = (function(_super) {
   };
 
   ObjectBoard.prototype.spawn = function() {
-    var items, monster;
+    var items, monster, x, y, _ref;
     items = _.select(this.childNodes, function(i) {
       return i instanceof App.Entity.Monster;
     });
     if (items.length < 10) {
       monster = new App.Entity.Monster;
-      monster.x = Math.random() * 100;
-      monster.y = Math.random() * 100;
+      _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
+      monster.x = x;
+      monster.y = y;
       return this.addChild(monster);
     }
   };
