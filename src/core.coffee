@@ -10,7 +10,11 @@ class App.Core extends enchant.Core
     @keybind('E'.charCodeAt(0), 'e')
     @keybind('Q'.charCodeAt(0), 'q')
 
-    @preload ["img/chara0.png", 'img/roguetile.gif']
+    @preload [
+        "img/chara0.png"
+        'img/roguetile.gif'
+        'img/char/player.png'
+    ]
 
     @onload = =>
       @pushScene new App.Scene.Field

@@ -382,7 +382,7 @@ App.Core = (function(_super) {
     this.keybind('D'.charCodeAt(0), 'd');
     this.keybind('E'.charCodeAt(0), 'e');
     this.keybind('Q'.charCodeAt(0), 'q');
-    this.preload(["img/chara0.png", 'img/roguetile.gif']);
+    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png']);
     this.onload = function() {
       return _this.pushScene(new App.Scene.Field);
     };
@@ -599,7 +599,8 @@ App.Entity.Mouse = (function(_super) {
 
 })(App.Entity.Mover);
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+var PlayerSprite,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -674,26 +675,32 @@ App.Entity.Player = (function(_super) {
   }
 
   Player.prototype.draw = function() {
-    return this.addChild(new App.Entity.Circle(0, 0, 8));
+    this.sprite = new PlayerSprite;
+    return this.addChild(this.sprite);
   };
 
   Player.prototype.enterframe = function() {
+    var nx, ny;
+    nx = 0;
+    ny = 0;
     if (app.input.up || app.input.w) {
-      this.go(0, -this.move_speed);
+      ny = -1;
     } else if (app.input.down || app.input.s) {
-      this.go(0, +this.move_speed);
+      ny = +1;
     }
     if (app.input.right || app.input.d) {
-      this.go(+this.move_speed, 0);
+      nx += 1;
     } else if (app.input.left || app.input.a) {
-      this.go(-this.move_speed, 0);
+      nx -= 1;
     }
+    nx *= this.move_speed;
+    ny *= this.move_speed;
+    this.go(nx, ny);
+    this.sprite.update(nx, ny);
     if (app.input.e) {
       this.switchNextSkill();
-      p(this._skill_index);
     } else if (app.input.q) {
       this.switchPrevSkill();
-      p(this._skill_index);
     }
     this.parentNode.x = app.width / 2 - this.x;
     return this.parentNode.y = app.height / 2 - this.y;
@@ -702,6 +709,47 @@ App.Entity.Player = (function(_super) {
   return Player;
 
 })(App.Entity.Mover);
+
+PlayerSprite = (function(_super) {
+
+  __extends(PlayerSprite, _super);
+
+  function PlayerSprite() {
+    PlayerSprite.__super__.constructor.call(this, 32, 32);
+    this.row = 3;
+    this.image = app.assets['img/char/player.png'];
+    this.x -= this.width / 2;
+    this.y -= this.height / 2;
+    this.state_count = 0;
+  }
+
+  PlayerSprite.prototype.update = function(x, y) {
+    var index, prefix;
+    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    if (prefix !== this.last_prefix) {
+      this.state_count = 0;
+    } else {
+      this.state_count++;
+    }
+    this.last_prefix = prefix;
+    index = (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 1;
+        case 3:
+          return 0;
+      }
+    }).call(this);
+    return this.frame = prefix + index;
+  };
+
+  return PlayerSprite;
+
+})(enchant.Sprite);
 
 var ObjectBoard,
   __hasProp = {}.hasOwnProperty,
@@ -756,6 +804,10 @@ App.Entity.Map = (function(_super) {
 
   Map.prototype.isWall = function(x, y) {
     return !!this.hitmap[~~(y / this.cell_size)][~~(x / this.cell_size)];
+  };
+
+  Map.prototype.passable = function(x, y) {
+    return !this.isWall(x, y);
   };
 
   Map.prototype.getRandomPssable = function() {
@@ -826,16 +878,31 @@ ObjectBoard = (function(_super) {
   };
 
   ObjectBoard.prototype.spawn = function() {
-    var items, monster, x, y, _ref;
+    var add_monster, i, items, x, y, _i, _ref, _results,
+      _this = this;
     items = _.select(this.childNodes, function(i) {
       return i instanceof App.Entity.Monster;
     });
-    if (items.length < 10) {
-      monster = new App.Entity.Monster;
+    if (items.length < 30) {
       _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
-      monster.x = x;
-      monster.y = y;
-      return this.addChild(monster);
+      add_monster = function() {
+        var monster, nx, ny;
+        nx = x + Math.random() * _this.map.cell_size;
+        ny = y + Math.random() * _this.map.cell_size;
+        if (!_this.map.isWall(nx, ny)) {
+          monster = new App.Entity.Monster;
+          monster.x = nx;
+          monster.y = ny;
+          return _this.addChild(monster);
+        } else {
+          return add_monster();
+        }
+      };
+      _results = [];
+      for (i = _i = 1; _i <= 3; i = ++_i) {
+        _results.push(add_monster());
+      }
+      return _results;
     }
   };
 

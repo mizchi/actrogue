@@ -48,27 +48,73 @@ class App.Entity.Player extends App.Entity.Mover
     mixin @, App.Entity.ISkillSelector
     @on 'fire', @fire
 
+
   draw: ->
-    @addChild new App.Entity.Circle 0, 0, 8
+    @sprite = new PlayerSprite
+    @addChild @sprite
 
   enterframe: =>
-    if app.input.up or app.input.w
-      @go 0, -@move_speed
-    else if app.input.down or app.input.s
-      @go 0, +@move_speed
+    nx = 0
+    ny = 0
 
+    if app.input.up or app.input.w
+      ny = -1
+    else if app.input.down or app.input.s
+      ny = +1
     if app.input.right or app.input.d
-      @go +@move_speed, 0
+      nx += 1
     else if app.input.left or app.input.a
-      @go -@move_speed, 0
+      nx -= 1
+    nx *= @move_speed
+    ny *= @move_speed
+
+    @go nx, ny
+    @sprite.update nx, ny
 
     if app.input.e
       @switchNextSkill()
-      p @_skill_index
     else if app.input.q
       @switchPrevSkill()
-      p @_skill_index
 
     @parentNode.x = app.width/2 - @x
     @parentNode.y = app.height/2 - @y
 
+class PlayerSprite extends enchant.Sprite
+  constructor: ->
+    super 32,32
+    @row = 3
+
+    @image = app.assets['img/char/player.png']
+    @x -= @width/2
+    @y -= @height/2
+    @state_count = 0
+
+  update: (x, y) ->
+    prefix = @row *
+      if y > 0 then 0
+      else if x < 0 then 1
+      else if x > 0 then 2
+      else if y < 0 then 3
+
+    if prefix isnt @last_prefix
+      @state_count = 0
+    else
+      @state_count++
+    @last_prefix = prefix
+
+    index =
+      switch ~~(@state_count/5)%4
+        when 0 then 1
+        when 1 then 2
+        when 2 then 1
+        when 3 then 0
+    @frame = prefix + index
+      # @frame = @age % 3
+        # switch @frame
+        #   when 0 then 1
+        #   when 1 then 2
+        #   when 2 then 1
+
+  #   @on 'enterframe', @enterframe
+
+  # enterframe: =>

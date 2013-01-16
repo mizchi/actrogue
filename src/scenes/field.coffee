@@ -29,6 +29,8 @@ class App.Entity.Map extends enchant.Sprite
   isWall: (x, y) ->
     !! @hitmap[~~(y / @cell_size)][~~(x / @cell_size)]
 
+  passable: (x, y) -> not @isWall x, y
+
   getRandomPssable: ->
     x = ~~(Math.random() * @cell_x)
     y = ~~(Math.random() * @cell_y)
@@ -72,12 +74,21 @@ class ObjectBoard extends enchant.Group
 
   spawn: =>
     items = _.select @childNodes, (i) -> i instanceof App.Entity.Monster
-    if items.length < 10
-      monster = new App.Entity.Monster
+    if items.length < 30
       {x, y} = @map.getRandomPssable()
-      monster.x = x
-      monster.y = y
-      @addChild monster
+      add_monster = =>
+        nx = x + Math.random() * @map.cell_size
+        ny = y + Math.random() * @map.cell_size
+        unless @map.isWall(nx, ny)
+          monster = new App.Entity.Monster
+          monster.x = nx
+          monster.y = ny
+          @addChild monster
+        else
+          add_monster()
+
+      for i in [1..3]
+        add_monster()
 
 class App.Scene.Field extends enchant.Scene
   constructor: ->
