@@ -48,6 +48,9 @@ class App.Entity.Player extends App.Entity.Mover
     mixin @, App.Entity.ISkillSelector
     @on 'fire', @fire
 
+    @max_hp = 10
+    mixin @, App.Entity.IStatus
+
 
   draw: ->
     @sprite = new PlayerSprite
@@ -69,7 +72,8 @@ class App.Entity.Player extends App.Entity.Mover
     ny *= @move_speed
 
     @go nx, ny
-    @sprite.update nx, ny
+    if nx or ny
+      @sprite.update nx, ny
 
     if app.input.e
       @switchNextSkill()
@@ -109,12 +113,3 @@ class PlayerSprite extends enchant.Sprite
         when 2 then 1
         when 3 then 0
     @frame = prefix + index
-      # @frame = @age % 3
-        # switch @frame
-        #   when 0 then 1
-        #   when 1 then 2
-        #   when 2 then 1
-
-  #   @on 'enterframe', @enterframe
-
-  # enterframe: =>

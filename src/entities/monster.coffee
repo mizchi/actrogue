@@ -1,33 +1,21 @@
 class Position
   constructor: (@x, @y) ->
 
-class App.Entity.IHitPoint
-  @required:
-    max_hp: Number
-
-  initialize: ->
-    @hp = @max_hp
-
-  damage: (point) ->
-    @hp = Math.max @hp - point, 0
-
-  isDead: -> @hp <= 0
-  isAlive: -> not @isDead()
 
 class App.Entity.Monster extends App.Entity.Mover
   passable: false
   constructor: ->
     super
     @destination = null
-    @move_speed = 3
-    @sight_range = 50
+    @move_speed = 1
+    @sight_range = 120
     @group_id = App.Entity.GroupId.Enemy
 
     @mode = 'idle'
     @on 'hit', @hit
 
     @max_hp = 10
-    mixin @, App.Entity.IHitPoint
+    mixin @, App.Entity.IStatus
 
   hit: ({other}) =>
     @damage(2)
@@ -52,6 +40,17 @@ class App.Entity.Monster extends App.Entity.Mover
             @setRandomDestination()
 
       when "trace" #=> idle
+        attack_range = 10
+        attack_interval = app.fps
+        attack_power = 1
+        @cnt ?= 0
+
+        enemy_in_range = @find App.Entity.GroupId.Player, attack_range
+        if enemy_in_range
+          unless @cnt++ % attack_interval
+            enemy_in_range.damage(attack_power)
+          return
+
         unless @goAhead()
           target = @findInSight App.Entity.GroupId.Player
           if target
@@ -65,4 +64,38 @@ class App.Entity.Monster extends App.Entity.Mover
           @mode = "idle"
 
   draw: ->
-    @addChild new App.Entity.Circle 0, 0, 8, 'red'
+    @sprite = new MochiSprite
+    @addChild @sprite
+
+  onMove: (x, y) ->
+    @sprite.update x, y
+
+class MochiSprite extends enchant.Sprite
+  constructor: ->
+    super 20,28
+    @row = 6
+    @image = app.assets['img/char/mochi1.png']
+    @x -= @width/2
+    @y -= @height/2
+    @state_count = 0
+
+  update: (x, y) ->
+    prefix = @row *
+      if y > 0 then 0
+      else if x < 0 then 1
+      else if x > 0 then 2
+      else if y < 0 then 3
+
+    if prefix isnt @last_prefix
+      @state_count = 0
+    else
+      @state_count++
+    @last_prefix = prefix
+
+    index =
+      switch ~~(@state_count/5)%4
+        when 0 then 1
+        when 1 then 2
+        when 2 then 1
+        when 3 then 0
+    @frame = prefix + index

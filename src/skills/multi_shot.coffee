@@ -1,7 +1,7 @@
 class App.Skill.MultiShot extends App.Skill.Base
   exec: (x, y) ->
     num = 10
-    for i in [1..num]
+    for i in [1..3]
       blur_x = 4*(9*Math.random()-4)
       blur_y = 4*(9*Math.random()-4)
       move_speed = 16 - Math.random() * 8

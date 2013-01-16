@@ -27,6 +27,7 @@ class App.Entity.ITracer
     x: Number
     y: Number
     direction: Number
+    onMove: Function
 
   initialize: ->
     @destination = null
@@ -34,6 +35,7 @@ class App.Entity.ITracer
     @y_speed = 0
 
   goAhead: ->
+    @onMove @x_speed, @y_speed
     @go @x_speed, @y_speed, @destination.x, @destination.y
 
   setDestination: (x, y) ->
@@ -99,6 +101,8 @@ class App.Entity.Mover extends enchant.Group
       App.Entity.ITracer,
       App.Entity.ISearcher,
       App.Entity.IDrawer
+
+  onMove: ->
 
   enterframe: =>
     @drawByFrame()
