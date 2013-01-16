@@ -3,9 +3,6 @@ window.p = function() {
   return console.log.apply(console, arguments);
 };
 
-
-
-
 var checkRequired, debug, mixin_keywords, moduleKeywords, root,
   __slice = [].slice,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -371,6 +368,7 @@ App.Core = (function(_super) {
   __extends(Core, _super);
 
   function Core() {
+    var _this = this;
     Core.__super__.constructor.apply(this, arguments);
     window.app = this;
     this.fps = 30;
@@ -380,9 +378,9 @@ App.Core = (function(_super) {
     this.keybind('D'.charCodeAt(0), 'd');
     this.keybind('E'.charCodeAt(0), 'e');
     this.keybind('Q'.charCodeAt(0), 'q');
-    this.preload(["img/chara0.png"]);
+    this.preload(["img/chara0.png", 'img/roguetile.gif']);
     this.onload = function() {
-      return this.pushScene(new App.Scene.Field);
+      return _this.pushScene(new App.Scene.Field);
     };
     this.start();
   }
@@ -581,7 +579,7 @@ App.Entity.Mouse = (function(_super) {
   }
 
   Mouse.prototype.draw = function() {
-    return this.addChild(new App.Entity.Circle(0, 0, 8, 'blue'));
+    return this.addChild(new App.Entity.Circle(0, 0, 8, 'green', 'stroke'));
   };
 
   Mouse.prototype.enterframe = function() {
@@ -700,22 +698,119 @@ App.Entity.Player = (function(_super) {
 })(App.Entity.Mover);
 
 var ObjectBoard,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+App.Entity.Map = (function(_super) {
+  var PASSABLE, WALL;
+
+  __extends(Map, _super);
+
+  WALL = 1;
+
+  PASSABLE = 0;
+
+  function Map(cell_x, cell_y) {
+    this.cell_x = cell_x;
+    this.cell_y = cell_y;
+    Map.__super__.constructor.apply(this, arguments);
+    this.cell_size = 48;
+    this.tile_size = 16;
+    this.width = this.cell_size * this.cell_x;
+    this.height = this.cell_size * this.cell_y;
+    p(this.width, this.height);
+    this.setMaze();
+    this.draw();
+  }
+
+  Map.prototype.setMaze = function() {
+    var map, x, y,
+      _this = this;
+    this.hitmap = (function() {
+      var _i, _ref, _results;
+      _results = [];
+      for (x = _i = 0, _ref = this.cell_x; 0 <= _ref ? _i < _ref : _i > _ref; x = 0 <= _ref ? ++_i : --_i) {
+        _results.push((function() {
+          var _j, _ref1, _results1;
+          _results1 = [];
+          for (y = _j = 0, _ref1 = this.cell_y; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; y = 0 <= _ref1 ? ++_j : --_j) {
+            _results1.push(null);
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
+    }).call(this);
+    map = new ROT.Map.Uniform(this.cell_x, this.cell_y);
+    return map.create(function(x, y, val) {
+      return _this.hitmap[x][y] = val;
+    });
+  };
+
+  Map.prototype.getRandomPssable = function() {
+    var x, y;
+    x = ~~(Math.random() * this.cell_x);
+    y = ~~(Math.random() * this.cell_y);
+    if (this.hitmap[y][x] === PASSABLE) {
+      return {
+        x: (x + 0.5) * this.cell_size,
+        y: (y + 0.5) * this.cell_size
+      };
+    } else {
+      return this.getRandomPssable();
+    }
+  };
+
+  Map.prototype.draw = function() {
+    var g, row, surface, val, x, y, _i, _j, _len, _len1, _ref;
+    surface = new enchant.Surface(this.width, this.height);
+    g = surface.context;
+    g.beginPath();
+    _ref = this.hitmap;
+    for (y = _i = 0, _len = _ref.length; _i < _len; y = ++_i) {
+      row = _ref[y];
+      for (x = _j = 0, _len1 = row.length; _j < _len1; x = ++_j) {
+        val = row[x];
+        g.fillStyle = val === WALL ? '#111' : val === PASSABLE ? '#fff' : void 0;
+        g.fillRect(x * this.cell_size, y * this.cell_size, this.cell_size, this.cell_size);
+      }
+    }
+    return this.image = surface;
+  };
+
+  return Map;
+
+})(enchant.Sprite);
 
 ObjectBoard = (function(_super) {
 
   __extends(ObjectBoard, _super);
 
-  function ObjectBoard() {
+  function ObjectBoard(map) {
+    this.map = map;
     this.spawn = __bind(this.spawn, this);
+
     ObjectBoard.__super__.constructor.apply(this, arguments);
-    this.addChild(new Label('0'));
-    this.player = new App.Entity.Player;
-    this.addChild(this.player);
+    this.createMap();
+    this.addPlayer();
     this.on('enterframe', this.enterframe);
   }
+
+  ObjectBoard.prototype.addPlayer = function() {
+    var x, y, _ref;
+    this.player = new App.Entity.Player;
+    _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
+    p(x, y);
+    this.player.x = x;
+    this.player.y = y;
+    return this.addChild(this.player);
+  };
+
+  ObjectBoard.prototype.createMap = function() {
+    this.map = new App.Entity.Map(32, 32);
+    return this.addChild(this.map);
+  };
 
   ObjectBoard.prototype.enterframe = function() {
     return this.spawn();

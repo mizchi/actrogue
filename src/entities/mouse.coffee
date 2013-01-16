@@ -1,6 +1,6 @@
 class App.Entity.Mouse extends App.Entity.Mover
   draw: ->
-    @addChild new App.Entity.Circle 0, 0, 8, 'blue'
+    @addChild new App.Entity.Circle 0, 0, 8, 'green', 'stroke'
 
   enterframe: ->
     @x = MouseEvent.offsetX
