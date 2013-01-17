@@ -1,2 +1,2 @@
 git co master dist
-cp dist/* javascripts/
+git co master index.html
