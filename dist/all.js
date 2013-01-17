@@ -838,6 +838,85 @@ App.Entity.Map = (function(_super) {
 
 })(enchant.Sprite);
 
+var SlimeSprite,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Slime = (function(_super) {
+
+  __extends(Slime, _super);
+
+  function Slime() {
+    this.enterframe = __bind(this.enterframe, this);
+    this.move_speed = 1;
+    this.sight_range = 120;
+    this.max_hp = 10;
+    this.mode = 'idle';
+    Slime.__super__.constructor.apply(this, arguments);
+    this.group_id = App.Entity.GroupId.Enemy;
+    mixin(this, App.AI.IBasic);
+  }
+
+  Slime.prototype.onDead = function() {};
+
+  Slime.prototype.enterframe = function() {
+    Slime.__super__.enterframe.apply(this, arguments);
+    return this.guess();
+  };
+
+  Slime.prototype.draw = function() {
+    this.sprite = new SlimeSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
+    return this.addChild(this.sprite);
+  };
+
+  Slime.prototype.onMove = function(x, y) {
+    return this.sprite.update(x, y);
+  };
+
+  return Slime;
+
+})(App.Entity.Monster);
+
+SlimeSprite = (function(_super) {
+
+  __extends(SlimeSprite, _super);
+
+  function SlimeSprite() {
+    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
+    this.state_count = 0;
+  }
+
+  SlimeSprite.prototype.update = function(x, y) {
+    var index, prefix;
+    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    if (prefix !== this.last_prefix) {
+      this.state_count = 0;
+    } else {
+      this.state_count++;
+    }
+    this.last_prefix = prefix;
+    index = (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 1;
+        case 3:
+          return 0;
+      }
+    }).call(this);
+    return this.frame = prefix + index;
+  };
+
+  return SlimeSprite;
+
+})(App.Entity.UditorSprite);
+
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1142,85 +1221,6 @@ App.Entity.ISkillSelector = (function() {
   return ISkillSelector;
 
 })();
-
-var SlimeSprite,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-App.Entity.Slime = (function(_super) {
-
-  __extends(Slime, _super);
-
-  function Slime() {
-    this.enterframe = __bind(this.enterframe, this);
-    this.move_speed = 1;
-    this.sight_range = 120;
-    this.max_hp = 10;
-    this.mode = 'idle';
-    Slime.__super__.constructor.apply(this, arguments);
-    this.group_id = App.Entity.GroupId.Enemy;
-    mixin(this, App.AI.IBasic);
-  }
-
-  Slime.prototype.onDead = function() {};
-
-  Slime.prototype.enterframe = function() {
-    Slime.__super__.enterframe.apply(this, arguments);
-    return this.guess();
-  };
-
-  Slime.prototype.draw = function() {
-    this.sprite = new SlimeSprite;
-    this.width = this.sprite.width;
-    this.height = this.sprite.height;
-    return this.addChild(this.sprite);
-  };
-
-  Slime.prototype.onMove = function(x, y) {
-    return this.sprite.update(x, y);
-  };
-
-  return Slime;
-
-})(App.Entity.Monster);
-
-SlimeSprite = (function(_super) {
-
-  __extends(SlimeSprite, _super);
-
-  function SlimeSprite() {
-    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
-    this.state_count = 0;
-  }
-
-  SlimeSprite.prototype.update = function(x, y) {
-    var index, prefix;
-    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
-    if (prefix !== this.last_prefix) {
-      this.state_count = 0;
-    } else {
-      this.state_count++;
-    }
-    this.last_prefix = prefix;
-    index = (function() {
-      switch (~~(this.state_count / 5) % 4) {
-        case 0:
-          return 1;
-        case 1:
-          return 2;
-        case 2:
-          return 1;
-        case 3:
-          return 0;
-      }
-    }).call(this);
-    return this.frame = prefix + index;
-  };
-
-  return SlimeSprite;
-
-})(App.Entity.UditorSprite);
 
 var IStairway,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
