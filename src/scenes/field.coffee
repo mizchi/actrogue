@@ -12,10 +12,7 @@ class App.Scene.Field extends enchant.Scene
   constructor: (@player) ->
     super
 
-    @objectBoard = new App.Scene.ObjectBoard @player
-
-    @addChild @objectBoard
-
+    @initializeBoard()
     @mouse = new App.Entity.Mouse
     @addChild @mouse
 
@@ -27,8 +24,6 @@ class App.Scene.Field extends enchant.Scene
     @on 'touchstart', @touchstart
     @on 'enterframe', @enterframe
 
-    @minimap = @objectBoard.map.createMiniMapSprite()
-    @addChild @minimap
     @on 'stairdown', @nextFloor
     @on 'stairup', @prevFloor
 
@@ -38,7 +33,9 @@ class App.Scene.Field extends enchant.Scene
     @addChild @objectBoard
 
     @minimap?.remove()
-    @minimap = @objectBoard.map.createMiniMapSprite()
+    @minimap = new App.UI.MiniMap @objectBoard.map
+    # p @minimap.x, app.width - @minimap.minimap.width
+    # @minimap.x = app.width - @minimap.width
     @addChild @minimap
 
   nextFloor: =>

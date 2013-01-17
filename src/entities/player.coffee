@@ -76,6 +76,11 @@ class App.Entity.Player extends App.Entity.Mover
     @addChild @sprite
 
   enterframe: =>
+    if app.input.b
+      tx = @x + Math.cos(@direction) * 200
+      ty = @y + Math.sin(@direction) * 200
+      @fire x:tx, y:ty
+
     nx = 0
     ny = 0
 
@@ -87,18 +92,13 @@ class App.Entity.Player extends App.Entity.Mover
       nx += 1
     else if app.input.left or app.input.a
       nx -= 1
-
     nx *= @move_speed
     ny *= @move_speed
 
-    # if nx or ny
-    #   @update_direction nx - @x, ny - @y
-    #   p @direction
-
     @go nx, ny
-
     if nx or ny
       @sprite.update nx, ny
+      @update_direction nx, ny
 
     if app.input.e
       @switchNextSkill()

@@ -1013,7 +1013,15 @@ App.Entity.Player = (function(_super) {
   };
 
   Player.prototype.enterframe = function() {
-    var nx, ny;
+    var nx, ny, tx, ty;
+    if (app.input.b) {
+      tx = this.x + Math.cos(this.direction) * 200;
+      ty = this.y + Math.sin(this.direction) * 200;
+      this.fire({
+        x: tx,
+        y: ty
+      });
+    }
     nx = 0;
     ny = 0;
     if (app.input.up || app.input.w) {
@@ -1031,6 +1039,7 @@ App.Entity.Player = (function(_super) {
     this.go(nx, ny);
     if (nx || ny) {
       this.sprite.update(nx, ny);
+      this.update_direction(nx, ny);
     }
     if (app.input.e) {
       this.switchNextSkill();
@@ -1329,8 +1338,7 @@ App.Scene.Field = (function(_super) {
     this.nextFloor = __bind(this.nextFloor, this);
 
     Field.__super__.constructor.apply(this, arguments);
-    this.objectBoard = new App.Scene.ObjectBoard(this.player);
-    this.addChild(this.objectBoard);
+    this.initializeBoard();
     this.mouse = new App.Entity.Mouse;
     this.addChild(this.mouse);
     this.ui = new App.UI.Main(this.player);
@@ -1339,8 +1347,6 @@ App.Scene.Field = (function(_super) {
     this.addChild(dom);
     this.on('touchstart', this.touchstart);
     this.on('enterframe', this.enterframe);
-    this.minimap = this.objectBoard.map.createMiniMapSprite();
-    this.addChild(this.minimap);
     this.on('stairdown', this.nextFloor);
     this.on('stairup', this.prevFloor);
   }
@@ -1355,7 +1361,7 @@ App.Scene.Field = (function(_super) {
     if ((_ref1 = this.minimap) != null) {
       _ref1.remove();
     }
-    this.minimap = this.objectBoard.map.createMiniMapSprite();
+    this.minimap = new App.UI.MiniMap(this.objectBoard.map);
     return this.addChild(this.minimap);
   };
 
@@ -1717,3 +1723,42 @@ App.UI.Menu = (function(_super) {
   return Menu;
 
 })(enchant.DomLayer);
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.UI.MiniMap = (function(_super) {
+  var PASSABLE, WALL, inner_size;
+
+  __extends(MiniMap, _super);
+
+  WALL = 1;
+
+  PASSABLE = 0;
+
+  inner_size = 2;
+
+  function MiniMap(map) {
+    this.map = map;
+    this.enterframe = __bind(this.enterframe, this);
+
+    this.cell_x = this.map.cell_x;
+    this.cell_y = this.map.cell_y;
+    MiniMap.__super__.constructor.call(this, this.cell_x * inner_size, this.cell_y * inner_size);
+    this.minimap = this.map.createMiniMapSprite();
+    this.addChild(this.minimap);
+    this.avatar = new Label('.');
+    this.avatar.color = 'blue';
+    this.addChild(this.avatar);
+    this.on('enterframe', this.enterframe);
+  }
+
+  MiniMap.prototype.enterframe = function() {
+    this.avatar.x = ~~(app.player.x / this.map.cell_size) * inner_size - 2;
+    return this.avatar.y = ~~(app.player.y / this.map.cell_size) * inner_size - 10;
+  };
+
+  return MiniMap;
+
+})(enchant.Group);
