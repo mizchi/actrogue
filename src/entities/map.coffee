@@ -1,6 +1,7 @@
 class App.Entity.Map extends enchant.Sprite
   WALL = 1
   PASSABLE = 0
+  TILE_SIZE = 16
 
   constructor: (@cell_x, @cell_y) ->
     super
@@ -18,6 +19,7 @@ class App.Entity.Map extends enchant.Sprite
       for x in [0...@cell_x]
          for y in [0...@cell_y]
             null
+    @layer = []
 
     map = new ROT.Map.Uniform(@cell_x, @cell_y)
     map.create (x, y, val) =>
@@ -48,7 +50,23 @@ class App.Entity.Map extends enchant.Sprite
           @drawTip g, x, y, 1, 5
     @image = surface
 
-  TILE_SIZE = 16
+  createMiniMapSprite: ->
+    inner_size = 2
+    minimap = new Sprite(inner_size * @cell_x, inner_size * @cell_y)
+    minimap.backgroundColor = 'white'
+
+    surface = new enchant.Surface(@width, @height)
+    g = surface.context
+    g.beginPath()
+    for row, y in @hitmap
+      for val, x in row
+        if WALL is val
+          g.color = 'black'
+          g.fillRect x * inner_size, y * inner_size, inner_size ,inner_size
+
+    minimap.image = surface
+    return minimap
+
   drawTip: (g, x, y, tile_x, tile_y) ->
     g.drawImage @maptip._element,
       tile_x * TILE_SIZE, tile_y * TILE_SIZE, TILE_SIZE, TILE_SIZE,

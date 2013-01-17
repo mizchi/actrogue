@@ -1,50 +1,58 @@
-class ObjectBoard extends enchant.Group
-  constructor: (@map) ->
-    super
-    @createMap()
-    @addPlayer()
+class App.Scene.Menu extends enchant.Scene
+  constructor: (player, key) ->
+    super 640, 480
+    @addChild new Label '#############'
     @on 'enterframe', @enterframe
 
-  addPlayer: ->
-    @player = new App.Entity.Player
-    {x, y} = @map.getRandomPssable()
-    @player.x = x
-    @player.y = y
-    @addChild @player
-
-  createMap: ->
-    @map = new App.Entity.Map 32,32
-    @addChild @map
-
-  enterframe: ->
-    @spawn()
-
-  spawn: =>
-    items = _.select @childNodes, (i) -> i instanceof App.Entity.Monster
-    if items.length < 30
-      {x, y} = @map.getRandomPssable()
-      add_monster = =>
-        nx = x + Math.random() * @map.cell_size
-        ny = y + Math.random() * @map.cell_size
-        unless @map.isWall(nx, ny)
-          monster = new App.Entity.Monster
-          monster.x = nx
-          monster.y = ny
-          @addChild monster
-        else
-          add_monster()
-      for i in [1..3]
-        add_monster()
+  enterframe: =>
+    if app.input.c and app.isKeyFree('c')
+      app.popScene()
 
 class App.Scene.Field extends enchant.Scene
-  constructor: ->
+  constructor: (@player) ->
     super
-    @objectBoard = new ObjectBoard
+
+    @objectBoard = new App.Scene.ObjectBoard @player
+
     @addChild @objectBoard
 
     @mouse = new App.Entity.Mouse
     @addChild @mouse
+
+    @ui = new App.UI.Main @player
+    @addChild @ui
+
+    dom = new enchant.DomLayer
+    @addChild dom
     @on 'touchstart', @touchstart
+    @on 'enterframe', @enterframe
+
+    @minimap = @objectBoard.map.createMiniMapSprite()
+    @addChild @minimap
+    @on 'stairdown', @nextFloor
+    @on 'stairup', @prevFloor
+
+  initializeBoard: ->
+    @objectBoard?.remove()
+    @objectBoard = new App.Scene.ObjectBoard @player
+    @addChild @objectBoard
+
+    @minimap?.remove()
+    @minimap = @objectBoard.map.createMiniMapSprite()
+    @addChild @minimap
+
+  nextFloor: =>
+    @initializeBoard()
+
+  prevFloor: =>
+    @initializeBoard()
+
+  enterframe: =>
+    if app.input.c and app.isKeyFree('c')
+      app.pushScene new App.Scene.Menu
+
+    if app.input.i and app.isKeyFree('i')
+      @nextFloor()
 
   touchstart: ->
     e = new enchant.Event "fire"

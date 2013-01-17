@@ -1,38 +1,3 @@
-class App.Entity.ISkillSelector
-  required:
-    skills: Array
-    age: Number
-
-  initialize: ->
-    @_skill_index = 0
-    @_last_switch_age = @age
-
-  _keyWaitEnough: ->
-    @age - @_last_switch_age > 0.3*app.fps
-
-  _updateKeyWait: ->
-    @_last_switch_age = @age
-
-  switchNextSkill: ->
-    if @_keyWaitEnough()
-      @_updateKeyWait()
-
-      if @_skill_index + 1 < @skills.length
-        @_skill_index += 1
-      else
-        @_skill_index = 0
-
-  switchPrevSkill: ->
-    if @_skill_index - 1 >= 0
-      @_skill_index -= 1
-    else
-      @_skill_index = @skills.length - 1
-
-  _selectedSkill: -> @skills[@_skill_index]
-
-  fire: (e) ->
-    @_selectedSkill().exec(e.x, e.y)
-
 class App.Entity.Player extends App.Entity.Mover
   passable: false
 
@@ -40,7 +5,7 @@ class App.Entity.Player extends App.Entity.Mover
     super
     @group_id = App.Entity.GroupId.Player
     @move_speed = 6
-    @sight_range = 10
+    @sight_range = 1200
     @skills = [
       new App.Skill.MultiShot(@)
       new App.Skill.SingleShot(@)
@@ -49,8 +14,62 @@ class App.Entity.Player extends App.Entity.Mover
     @on 'fire', @fire
 
     @max_hp = 10
-    mixin @, App.Entity.IStatus
 
+    @exp = 0
+    @lv = 1
+    mixin @, App.Entity.IStatus, App.Entity.ILeveler
+    mixin @, App.IStoraged
+    @load 'player'
+
+  onLoad: (obj) ->
+    if obj is null
+      p 'player initialize'
+      @save 'player',
+        lv: 1
+        exp: 0
+        status:
+          str: 5
+          int: 5
+          dex: 5
+        skills: [
+          {
+            skill_name: 'MultiShot'
+            lv: 1
+          }
+        ]
+      @load 'player'
+    else
+      @lv = obj.lv
+      @exp = obj.exp
+      @status = obj.status
+      p @
+
+  savePlayData: ->
+    @save 'player',
+      lv: @lv
+      exp: 0
+      status:
+        str: @status.str
+        int: @status.int
+        dex: @status.dex
+      skills: [
+        {
+          skill_name: 'MultiShot'
+          lv: 1
+        }
+      ]
+
+  next_level_exp: ->
+    @lv * 10
+
+  onLevelUp: ->
+    p 'level up'
+    @hp = @max_hp
+    @savePlayData()
+
+  onDead: ->
+    @parentNode.popPlayer()
+    @hp = @max_hp
 
   draw: ->
     @sprite = new PlayerSprite
@@ -68,10 +87,16 @@ class App.Entity.Player extends App.Entity.Mover
       nx += 1
     else if app.input.left or app.input.a
       nx -= 1
+
     nx *= @move_speed
     ny *= @move_speed
 
+    # if nx or ny
+    #   @update_direction nx - @x, ny - @y
+    #   p @direction
+
     @go nx, ny
+
     if nx or ny
       @sprite.update nx, ny
 
@@ -82,6 +107,24 @@ class App.Entity.Player extends App.Entity.Mover
 
     @parentNode.x = app.width/2 - @x
     @parentNode.y = app.height/2 - @y
+
+class App.IStoraged
+  @required:
+    lv: Number
+    exp: Number
+    onLoad: Function # (obj) ->
+
+  initialize: ->
+    @_storage = window.localStorage
+
+  save: (name, obj) ->
+    @_storage[name] = JSON.stringify obj
+
+  load: (name) ->
+    obj = @_storage[name]
+    if obj? then @onLoad JSON.parse obj
+    else @onLoad null
+
 
 class PlayerSprite extends enchant.Sprite
   constructor: ->

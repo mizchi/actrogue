@@ -17,8 +17,9 @@ module.exports = function( grunt ) {
       vendor: {
         src: [
           "components/underscore/underscore-min.js",
-          "components/backbone/backbone-min.js",
+          "components/jquery/jquery.min.js",
           "components/enchant/enchant.min.js",
+          "components/handlebars/handlebars.js",
           "components/rot/rot.js"
         ],
         dest: "dist/vendor.js"
@@ -29,6 +30,7 @@ module.exports = function( grunt ) {
           "lib/util/*.js",
           "lib/initialize.js",
           "lib/skills/base.js",
+          "lib/ui/domt.js",
           "lib/shapes/*.js",
           "lib/entities/mover.js",
           "lib/**/*.js"

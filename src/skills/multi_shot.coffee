@@ -10,5 +10,5 @@ class App.Skill.MultiShot extends App.Skill.Base
         move_speed: move_speed
         x: @actor.x
         y: @actor.y
-        group_id: @group_id
+        group_id: @actor.group_id
       @actor.parentNode.addChild bullet

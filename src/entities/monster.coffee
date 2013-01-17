@@ -19,7 +19,15 @@ class App.Entity.Monster extends App.Entity.Mover
 
   hit: ({other}) =>
     @damage(2)
-    if @isDead() then @remove()
+    if @isDead()
+      _.each @parentNode?.childNodes, (i) =>
+        if i.group_id is other.group_id
+
+          p 'gain exp 1 to ', i.group_id
+          i.gainExp?(1)
+      @remove()
+
+  onDead: -> # TODO
 
   setRandomDestination: ->
     @setDestination(
@@ -46,7 +54,7 @@ class App.Entity.Monster extends App.Entity.Mover
         @cnt ?= 0
 
         enemy_in_range = @find App.Entity.GroupId.Player, attack_range
-        if enemy_in_range
+        if enemy_in_range instanceof App.Entity.Player
           unless @cnt++ % attack_interval
             enemy_in_range.damage(attack_power)
           return

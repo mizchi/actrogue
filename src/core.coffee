@@ -9,17 +9,37 @@ class App.Core extends enchant.Core
     @keybind('D'.charCodeAt(0), 'd')
     @keybind('E'.charCodeAt(0), 'e')
     @keybind('Q'.charCodeAt(0), 'q')
+    @keybind('I'.charCodeAt(0), 'i')
+    @keybind('C'.charCodeAt(0), 'c')
+    @keybind('B'.charCodeAt(0), 'b')
 
     @preload [
         "img/chara0.png"
         'img/roguetile.gif'
         'img/char/player.png'
         'img/char/mochi1.png'
+        'img/map0.png'
         'img/map1.png'
     ]
 
     @onload = =>
-      @pushScene new App.Scene.Field
+      @player = new App.Entity.Player
+      @pushScene new App.Scene.Field @player
 
     @start()
 
+  _key_free:{}
+
+  isKeyFree: (key) ->
+    # 初回
+    unless @_key_free[key]
+      @_key_free[key] = new Date().getTime()
+      true
+    else
+      # 最終入力から1/3秒経過
+      if new Date().getTime() - @_key_free[key] > 1000/3
+        @_key_free[key] = new Date().getTime()
+        true
+      # 待機中
+      else
+        false

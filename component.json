@@ -2,8 +2,9 @@
     "name":  "MyProject",
     "version": "0.0.1",
     "dependencies": {
-        "backbone": "latest",
         "underscore": "latest",
+        "handlebars": "latest",
+        "jquery": "latest",
         "enchant": "git://github.com/wise9/enchant.js.git",
         "rot": "git://github.com/ondras/rot.js.git",
         "requirejs": "2.1.1"

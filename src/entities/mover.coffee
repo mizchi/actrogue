@@ -38,6 +38,9 @@ class App.Entity.ITracer
     @onMove @x_speed, @y_speed
     @go @x_speed, @y_speed, @destination.x, @destination.y
 
+  update_direction: (dx, dy) ->
+    @direction = Math.atan2(dy, dx)
+
   setDestination: (x, y) ->
     @destination = new Position(x, y)
     @direction = Math.atan2(@destination.y - @y, @destination.x - @x)
@@ -86,7 +89,6 @@ class App.Entity.ITracer
     r = (if value < next then 1 else -1)
     r * (if r * next < r * dest then r * next else r * dest)
 
-
 class App.Entity.Mover extends enchant.Group
   constructor: ->
     super
@@ -96,7 +98,6 @@ class App.Entity.Mover extends enchant.Group
     @sight_range = 50
     @on 'enterframe', @enterframe
     @draw()
-
     mixin @,
       App.Entity.ITracer,
       App.Entity.ISearcher,

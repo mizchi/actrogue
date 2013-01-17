@@ -5,6 +5,7 @@ window.App =
   Scene: {}
   Entity: {}
   Skill: {}
+  UI: {}
 
 window.app = {}
 

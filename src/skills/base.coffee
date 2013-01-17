@@ -1,3 +1,3 @@
 class App.Skill.Base
-  constructor: (@actor)->
+  constructor: (@actor, @lv=1)->
   fire: (x, y) ->
