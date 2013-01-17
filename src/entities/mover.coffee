@@ -7,10 +7,12 @@ class App.Entity.ISearcher
     return false unless @parentNode?
     _.find @parentNode.childNodes, (node) =>
       if node?.group_id?
+        p1 = @center()
+        p2 = node.center()
         if node.group_id is group_id
           node.group_id \
-          and Math.abs(@x - node.x) < range \
-          and Math.abs(@y - node.y) < range
+          and Math.abs(p1.x - p2.x) < range \
+          and Math.abs(p1.y - p2.y) < range
       else
         false
 
@@ -107,4 +109,9 @@ class App.Entity.Mover extends enchant.Group
 
   enterframe: =>
     @drawByFrame()
+
+  center: ->
+    x: @x + (@width ? 16)/2
+    y: @y + (@height ? 16)/2
+
 

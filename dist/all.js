@@ -213,9 +213,12 @@ App.Entity.ISearcher = (function() {
       return false;
     }
     return _.find(this.parentNode.childNodes, function(node) {
+      var p1, p2;
       if ((node != null ? node.group_id : void 0) != null) {
+        p1 = _this.center();
+        p2 = node.center();
         if (node.group_id === group_id) {
-          return node.group_id && Math.abs(_this.x - node.x) < range && Math.abs(_this.y - node.y) < range;
+          return node.group_id && Math.abs(p1.x - p2.x) < range && Math.abs(p1.y - p2.y) < range;
         }
       } else {
         return false;
@@ -358,6 +361,14 @@ App.Entity.Mover = (function(_super) {
 
   Mover.prototype.enterframe = function() {
     return this.drawByFrame();
+  };
+
+  Mover.prototype.center = function() {
+    var _ref, _ref1;
+    return {
+      x: this.x + ((_ref = this.width) != null ? _ref : 16) / 2,
+      y: this.y + ((_ref1 = this.height) != null ? _ref1 : 16) / 2
+    };
   };
 
   return Mover;
