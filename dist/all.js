@@ -66,26 +66,6 @@ root.mixin = function() {
   return _results;
 };
 
-/*
-class IPoint3d
-  @required:
-    x: Number
-    y: Number
-
-  initialize: ->
-    @z = 0
-
-  getZ: -> @z
-
-class Point
-  constructor: (@x, @y) ->
-    mixin @, IPoint3d
-
-p = new Point
-console.log p.getZ
-*/
-
-
 root.include = function(klass, mixin) {
   return extend(klass.prototype, mixin);
 };
@@ -185,6 +165,10 @@ App.Skill.Base = (function() {
 
   Base.prototype.fire = function(x, y) {};
 
+  Base.prototype.center = function() {
+    return [this.actor.x + this.actor.width / 2, this.actor.y + this.actor.height / 2];
+  };
+
   return Base;
 
 })();
@@ -192,65 +176,21 @@ App.Skill.Base = (function() {
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-App.UI.Dom = (function(_super) {
+App.Entity.UditorSprite = (function(_super) {
 
-  __extends(Dom, _super);
+  __extends(UditorSprite, _super);
 
-  function Dom() {
-    return Dom.__super__.constructor.apply(this, arguments);
+  function UditorSprite(chartip_name) {
+    var image;
+    image = app.assets[chartip_name];
+    this.width = image.width;
+    this.height = image.height;
+    this.row = 6;
+    UditorSprite.__super__.constructor.call(this, image.width / 6, image.height / 4);
+    this.image = image;
   }
 
-  Dom.prototype.css = function(params) {
-    var key, val, _results;
-    _results = [];
-    for (key in params) {
-      val = params[key];
-      _results.push(this._style[key] = val);
-    }
-    return _results;
-  };
-
-  return Dom;
-
-})(enchant.Label);
-
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-App.Entity.Circle = (function(_super) {
-
-  __extends(Circle, _super);
-
-  function Circle(x, y, size, color, style) {
-    this.size = size;
-    this.color = color != null ? color : 'black';
-    this.style = style != null ? style : 'fill';
-    Circle.__super__.constructor.apply(this, arguments);
-    this.width = this.size;
-    this.height = this.size;
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
-    this.draw();
-  }
-
-  Circle.prototype.draw = function() {
-    var surface;
-    surface = new enchant.Surface(this.size, this.size);
-    this.g = surface.context;
-    this.g.beginPath();
-    this.g.fillStyle = this.color;
-    this.g.strokeStyle = this.color;
-    this.g.arc(this.size / 2, this.size / 2, this.size / 2, 0, Math.PI * 2, true);
-    if (this.style === 'fill') {
-      this.g.fill();
-    }
-    if (this.style === 'stroke') {
-      this.g.stroke();
-    }
-    return this.image = surface;
-  };
-
-  return Circle;
+  return UditorSprite;
 
 })(enchant.Sprite);
 
@@ -273,9 +213,12 @@ App.Entity.ISearcher = (function() {
       return false;
     }
     return _.find(this.parentNode.childNodes, function(node) {
+      var p1, p2;
       if ((node != null ? node.group_id : void 0) != null) {
+        p1 = _this.center();
+        p2 = node.center();
         if (node.group_id === group_id) {
-          return node.group_id && Math.abs(_this.x - node.x) < range && Math.abs(_this.y - node.y) < range;
+          return node.group_id && Math.abs(p1.x - p2.x) < range && Math.abs(p1.y - p2.y) < range;
         }
       } else {
         return false;
@@ -331,7 +274,10 @@ App.Entity.ITracer = (function() {
   };
 
   ITracer.prototype.setDestination = function(x, y) {
-    this.destination = new Position(x, y);
+    this.destination = {
+      x: x,
+      y: y
+    };
     this.direction = Math.atan2(this.destination.y - this.y, this.destination.x - this.x);
     this.x_speed = Math.cos(this.direction) * this.move_speed;
     return this.y_speed = Math.sin(this.direction) * this.move_speed;
@@ -404,8 +350,6 @@ App.Entity.Mover = (function(_super) {
     Mover.__super__.constructor.apply(this, arguments);
     this.group_id = 0;
     this.direction = 0;
-    this.move_speed = 1;
-    this.sight_range = 50;
     this.on('enterframe', this.enterframe);
     this.draw();
     mixin(this, App.Entity.ITracer, App.Entity.ISearcher, App.Entity.IDrawer);
@@ -417,9 +361,94 @@ App.Entity.Mover = (function(_super) {
     return this.drawByFrame();
   };
 
+  Mover.prototype.center = function() {
+    var _ref, _ref1;
+    return {
+      x: this.x + ((_ref = this.width) != null ? _ref : 16) / 2,
+      y: this.y + ((_ref1 = this.height) != null ? _ref1 : 16) / 2
+    };
+  };
+
   return Mover;
 
 })(enchant.Group);
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Monster = (function(_super) {
+
+  __extends(Monster, _super);
+
+  Monster.prototype.passable = false;
+
+  function Monster() {
+    this.hit = __bind(this.hit, this);
+    Monster.__super__.constructor.apply(this, arguments);
+    this.destination = null;
+    mixin(this, App.Entity.IStatus);
+    this.on('hit', this.hit);
+  }
+
+  Monster.prototype.onDead = function() {};
+
+  Monster.prototype.hit = function(_arg) {
+    var other, _ref,
+      _this = this;
+    other = _arg.other;
+    this.damage(1 + ~~(Math.random() * 3));
+    if (this.isDead()) {
+      _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
+        if (i.group_id === other.group_id) {
+          return typeof i.gainExp === "function" ? i.gainExp(1) : void 0;
+        }
+      });
+      return this.remove();
+    }
+  };
+
+  return Monster;
+
+})(App.Entity.Mover);
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Circle = (function(_super) {
+
+  __extends(Circle, _super);
+
+  function Circle(x, y, size, color, style) {
+    this.size = size;
+    this.color = color != null ? color : 'black';
+    this.style = style != null ? style : 'fill';
+    Circle.__super__.constructor.apply(this, arguments);
+    this.width = this.size;
+    this.height = this.size;
+    this.draw();
+  }
+
+  Circle.prototype.draw = function() {
+    var surface;
+    surface = new enchant.Surface(this.size, this.size);
+    this.g = surface.context;
+    this.g.beginPath();
+    this.g.fillStyle = this.color;
+    this.g.strokeStyle = this.color;
+    this.g.arc(this.size / 2, this.size / 2, this.size / 2, 0, Math.PI * 2, true);
+    if (this.style === 'fill') {
+      this.g.fill();
+    }
+    if (this.style === 'stroke') {
+      this.g.stroke();
+    }
+    return this.image = surface;
+  };
+
+  return Circle;
+
+})(enchant.Sprite);
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -442,7 +471,7 @@ App.Core = (function(_super) {
     this.keybind('I'.charCodeAt(0), 'i');
     this.keybind('C'.charCodeAt(0), 'c');
     this.keybind('B'.charCodeAt(0), 'b');
-    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png']);
+    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png', 'img/Data/CharaChip/[Chara]Civilian_Male_A.png', 'img/Data/CharaChip/[Monster]Slime1_pochi.png', 'img/Data/CharaChip/[Monster]Goblin1_tapis.png']);
     this.onload = function() {
       _this.player = new App.Entity.Player;
       return _this.pushScene(new App.Scene.Field(_this.player));
@@ -502,7 +531,9 @@ App.Entity.Bullet = (function(_super) {
   };
 
   Bullet.prototype.draw = function() {
-    return this.addChild(new App.Entity.Circle(0, 0, 4, 'black', 'stroke'));
+    var circle;
+    circle = new App.Entity.Circle(0, 0, 4, 'black', 'stroke');
+    return this.addChild(circle);
   };
 
   Bullet.prototype.isDead = function() {
@@ -511,6 +542,7 @@ App.Entity.Bullet = (function(_super) {
 
   Bullet.prototype.enterframe = function() {
     var event, target;
+    Bullet.__super__.enterframe.apply(this, arguments);
     if (!this.goAhead()) {
       this.remove();
     }
@@ -530,57 +562,79 @@ App.Entity.Bullet = (function(_super) {
 
 })(App.Entity.Mover);
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-App.Entity.DamageLabel = (function(_super) {
+App.Entity.IBasicAI = (function() {
 
-  __extends(DamageLabel, _super);
+  function IBasicAI() {
+    this.guess = __bind(this.guess, this);
 
-  function DamageLabel(text, x, y, color) {
-    if (color == null) {
-      color = 'red';
-    }
-    this.enterframe = __bind(this.enterframe, this);
-
-    DamageLabel.__super__.constructor.apply(this, arguments);
-    this.x = x;
-    this.y = y;
-    this.addDiffByOther();
-    this.lifetime = 1;
-    this.color = color;
-    this.on('enterframe', this.enterframe);
   }
 
-  DamageLabel.prototype.addDiffByOther = function() {
-    var _ref,
-      _this = this;
-    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(node) {
-      if (node instanceof DamageLabel) {
-        if (Math.abs(node.x - _this.x) < 8 && Math.abs(node.y - _this.y) < 8) {
-          p('add diff');
-          _this.x += 8;
-          return _this.y += 8;
-        }
-      }
-    });
+  IBasicAI.required = {
+    move_speed: Number,
+    sight_range: Number,
+    group_id: Number,
+    setDestination: Function
   };
 
-  DamageLabel.prototype.enterframe = function() {
-    var progress;
-    progress = this.age / (app.fps * this.lifetime);
-    if (progress < 1) {
-      this.y -= 0.5;
-      return this.opacity = 1 - progress;
-    } else {
-      return this.remove();
+  IBasicAI.prototype.initialize = function() {
+    return this.mode = 'idle';
+  };
+
+  IBasicAI.prototype.guess = function() {
+    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
+    switch (this.mode) {
+      case "idle":
+        target = this.findInSight(App.Entity.GroupId.Player);
+        if (target) {
+          this.mode = "trace";
+          return this.setDestination(target.x, target.y);
+        } else {
+          if (Math.random() < 1 / app.fps) {
+            this.mode = "wander";
+            return this.setRandomDestination();
+          }
+        }
+        break;
+      case "trace":
+        attack_range = 10;
+        attack_interval = app.fps;
+        attack_power = 1;
+        if ((_ref = this.cnt) == null) {
+          this.cnt = 0;
+        }
+        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
+        if (enemy_in_range instanceof App.Entity.Player) {
+          if (!(this.cnt++ % attack_interval)) {
+            enemy_in_range.damage(attack_power);
+          }
+          return;
+        }
+        if (!this.goAhead()) {
+          target = this.findInSight(App.Entity.GroupId.Player);
+          if (target) {
+            return this.setDestination(target.x, target.y);
+          } else {
+            this.removeDestination();
+            return this.mode = "idle";
+          }
+        }
+        break;
+      case "wander":
+        if (!this.goAhead()) {
+          return this.mode = "idle";
+        }
     }
   };
 
-  return DamageLabel;
+  IBasicAI.prototype.setRandomDestination = function() {
+    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
+  };
 
-})(enchant.Label);
+  return IBasicAI;
+
+})();
 
 
 App.Entity.ILeveler = (function() {
@@ -595,7 +649,6 @@ App.Entity.ILeveler = (function() {
   };
 
   ILeveler.prototype.gainExp = function(point) {
-    p('gain exp', point);
     this.exp += point;
     if (this.next_level_exp() <= this.exp) {
       this.lv += 1;
@@ -605,6 +658,101 @@ App.Entity.ILeveler = (function() {
   };
 
   return ILeveler;
+
+})();
+
+
+App.Entity.ISkillSelector = (function() {
+
+  function ISkillSelector() {}
+
+  ISkillSelector.prototype.required = {
+    skills: Array,
+    age: Number
+  };
+
+  ISkillSelector.prototype.initialize = function() {
+    this._skill_index = 0;
+    return this._last_switch_age = this.age;
+  };
+
+  ISkillSelector.prototype._keyWaitEnough = function() {
+    return this.age - this._last_switch_age > 0.3 * app.fps;
+  };
+
+  ISkillSelector.prototype._updateKeyWait = function() {
+    return this._last_switch_age = this.age;
+  };
+
+  ISkillSelector.prototype.switchNextSkill = function() {
+    if (this._keyWaitEnough()) {
+      this._updateKeyWait();
+      if (this._skill_index + 1 < this.skills.length) {
+        return this._skill_index += 1;
+      } else {
+        return this._skill_index = 0;
+      }
+    }
+  };
+
+  ISkillSelector.prototype.switchPrevSkill = function() {
+    if (this._skill_index - 1 >= 0) {
+      return this._skill_index -= 1;
+    } else {
+      return this._skill_index = this.skills.length - 1;
+    }
+  };
+
+  ISkillSelector.prototype.selected_skill = function() {
+    return this.skills[this._skill_index];
+  };
+
+  ISkillSelector.prototype.fire = function(e) {
+    return this.selected_skill().exec(e.x, e.y);
+  };
+
+  return ISkillSelector;
+
+})();
+
+
+App.Entity.IStatus = (function() {
+
+  function IStatus() {}
+
+  IStatus.required = {
+    max_hp: Number,
+    parentNode: enchant.Node,
+    onDead: Function
+  };
+
+  IStatus.prototype.initialize = function() {
+    return this.hp = this.max_hp;
+  };
+
+  IStatus.prototype.damage = function(point) {
+    var color, _ref;
+    this.hp = Math.max(this.hp - point, 0);
+    this.checkAlive();
+    color = this instanceof App.Entity.Player ? 'purple' : 'red';
+    return (_ref = this.parentNode) != null ? _ref.addChild(new App.Entity.DamageLabel("" + point, this.x + 8, this.y, color)) : void 0;
+  };
+
+  IStatus.prototype.checkAlive = function() {
+    if (this.isDead()) {
+      return this.onDead();
+    }
+  };
+
+  IStatus.prototype.isDead = function() {
+    return this.hp <= 0;
+  };
+
+  IStatus.prototype.isAlive = function() {
+    return !this.isDead();
+  };
+
+  return IStatus;
 
 })();
 
@@ -654,14 +802,29 @@ App.Entity.Map = (function(_super) {
       return _results;
     }).call(this);
     this.layer = [];
-    map = new ROT.Map.Uniform(this.cell_x, this.cell_y);
+    map = new ROT.Map.Cellular(this.cell_x, this.cell_y);
+    map.randomize(0.4);
     return map.create(function(x, y, val) {
       return _this.hitmap[x][y] = val;
     });
   };
 
   Map.prototype.isWall = function(x, y) {
-    return !!this.hitmap[~~(y / this.cell_size)][~~(x / this.cell_size)];
+    var row, v;
+    row = this.hitmap[~~(y / this.cell_size)];
+    if (row == null) {
+      return true;
+    } else {
+      v = row[~~(x / this.cell_size)];
+      switch (v) {
+        case 1:
+          return true;
+        case void 0:
+          return true;
+        default:
+          return false;
+      }
+    }
   };
 
   Map.prototype.passable = function(x, y) {
@@ -733,139 +896,57 @@ App.Entity.Map = (function(_super) {
 
 })(enchant.Sprite);
 
-var MochiSprite, Position,
+var GoblinSprite,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Position = (function() {
+App.Entity.Goblin = (function(_super) {
 
-  function Position(x, y) {
-    this.x = x;
-    this.y = y;
-  }
+  __extends(Goblin, _super);
 
-  return Position;
-
-})();
-
-App.Entity.Monster = (function(_super) {
-
-  __extends(Monster, _super);
-
-  Monster.prototype.passable = false;
-
-  function Monster() {
+  function Goblin() {
     this.enterframe = __bind(this.enterframe, this);
-
-    this.hit = __bind(this.hit, this);
-    Monster.__super__.constructor.apply(this, arguments);
-    this.destination = null;
-    this.move_speed = 1;
-    this.sight_range = 120;
+    this.move_speed = 4;
+    this.sight_range = 220;
+    this.max_hp = 20;
+    Goblin.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Enemy;
-    this.mode = 'idle';
-    this.on('hit', this.hit);
-    this.max_hp = 10;
-    mixin(this, App.Entity.IStatus);
+    mixin(this, App.Entity.IBasicAI);
   }
 
-  Monster.prototype.hit = function(_arg) {
-    var other, _ref,
-      _this = this;
-    other = _arg.other;
-    this.damage(2);
-    if (this.isDead()) {
-      _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
-        if (i.group_id === other.group_id) {
-          p('gain exp 1 to ', i.group_id);
-          return typeof i.gainExp === "function" ? i.gainExp(1) : void 0;
-        }
-      });
-      return this.remove();
-    }
+  Goblin.prototype.onDead = function() {};
+
+  Goblin.prototype.enterframe = function() {
+    Goblin.__super__.enterframe.apply(this, arguments);
+    return this.guess();
   };
 
-  Monster.prototype.onDead = function() {};
-
-  Monster.prototype.setRandomDestination = function() {
-    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
-  };
-
-  Monster.prototype.enterframe = function() {
-    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
-    Monster.__super__.enterframe.apply(this, arguments);
-    switch (this.mode) {
-      case "idle":
-        target = this.findInSight(App.Entity.GroupId.Player);
-        if (target) {
-          this.mode = "trace";
-          return this.setDestination(target.x, target.y);
-        } else {
-          if (Math.random() < 1 / app.fps) {
-            this.mode = "wander";
-            return this.setRandomDestination();
-          }
-        }
-        break;
-      case "trace":
-        attack_range = 10;
-        attack_interval = app.fps;
-        attack_power = 1;
-        if ((_ref = this.cnt) == null) {
-          this.cnt = 0;
-        }
-        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
-        if (enemy_in_range instanceof App.Entity.Player) {
-          if (!(this.cnt++ % attack_interval)) {
-            enemy_in_range.damage(attack_power);
-          }
-          return;
-        }
-        if (!this.goAhead()) {
-          target = this.findInSight(App.Entity.GroupId.Player);
-          if (target) {
-            return this.setDestination(target.x, target.y);
-          } else {
-            this.removeDestination();
-            return this.mode = "idle";
-          }
-        }
-        break;
-      case "wander":
-        if (!this.goAhead()) {
-          return this.mode = "idle";
-        }
-    }
-  };
-
-  Monster.prototype.draw = function() {
-    this.sprite = new MochiSprite;
+  Goblin.prototype.draw = function() {
+    this.sprite = new GoblinSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
     return this.addChild(this.sprite);
   };
 
-  Monster.prototype.onMove = function(x, y) {
+  Goblin.prototype.onMove = function(x, y) {
     return this.sprite.update(x, y);
   };
 
-  return Monster;
+  return Goblin;
 
-})(App.Entity.Mover);
+})(App.Entity.Monster);
 
-MochiSprite = (function(_super) {
+GoblinSprite = (function(_super) {
 
-  __extends(MochiSprite, _super);
+  __extends(GoblinSprite, _super);
 
-  function MochiSprite() {
-    MochiSprite.__super__.constructor.call(this, 20, 28);
-    this.row = 6;
-    this.image = app.assets['img/char/mochi1.png'];
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
+  function GoblinSprite() {
+    GoblinSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Goblin1_tapis.png');
     this.state_count = 0;
   }
 
-  MochiSprite.prototype.update = function(x, y) {
+  GoblinSprite.prototype.update = function(x, y) {
     var index, prefix;
     prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
     if (prefix !== this.last_prefix) {
@@ -889,9 +970,88 @@ MochiSprite = (function(_super) {
     return this.frame = prefix + index;
   };
 
-  return MochiSprite;
+  return GoblinSprite;
 
-})(enchant.Sprite);
+})(App.Entity.UditorSprite);
+
+var SlimeSprite,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Slime = (function(_super) {
+
+  __extends(Slime, _super);
+
+  function Slime() {
+    this.enterframe = __bind(this.enterframe, this);
+    this.move_speed = 1;
+    this.sight_range = 120;
+    this.max_hp = 10;
+    this.mode = 'idle';
+    Slime.__super__.constructor.apply(this, arguments);
+    this.group_id = App.Entity.GroupId.Enemy;
+    mixin(this, App.Entity.IBasicAI);
+  }
+
+  Slime.prototype.onDead = function() {};
+
+  Slime.prototype.enterframe = function() {
+    Slime.__super__.enterframe.apply(this, arguments);
+    return this.guess();
+  };
+
+  Slime.prototype.draw = function() {
+    this.sprite = new SlimeSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
+    return this.addChild(this.sprite);
+  };
+
+  Slime.prototype.onMove = function(x, y) {
+    return this.sprite.update(x, y);
+  };
+
+  return Slime;
+
+})(App.Entity.Monster);
+
+SlimeSprite = (function(_super) {
+
+  __extends(SlimeSprite, _super);
+
+  function SlimeSprite() {
+    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
+    this.state_count = 0;
+  }
+
+  SlimeSprite.prototype.update = function(x, y) {
+    var index, prefix;
+    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    if (prefix !== this.last_prefix) {
+      this.state_count = 0;
+    } else {
+      this.state_count++;
+    }
+    this.last_prefix = prefix;
+    index = (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 1;
+        case 3:
+          return 0;
+      }
+    }).call(this);
+    return this.frame = prefix + index;
+  };
+
+  return SlimeSprite;
+
+})(App.Entity.UditorSprite);
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -901,7 +1061,9 @@ App.Entity.Mouse = (function(_super) {
   __extends(Mouse, _super);
 
   function Mouse() {
-    return Mouse.__super__.constructor.apply(this, arguments);
+    this.move_speed = 0;
+    this.sight_range = 0;
+    Mouse.__super__.constructor.apply(this, arguments);
   }
 
   Mouse.prototype.draw = function() {
@@ -919,6 +1081,182 @@ App.Entity.Mouse = (function(_super) {
 
 })(App.Entity.Mover);
 
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Bullet = (function(_super) {
+
+  __extends(Bullet, _super);
+
+  Bullet.prototype.passable = true;
+
+  function Bullet(_arg) {
+    var dx, dy, group_id, move_speed, rad, range, x, y;
+    x = _arg.x, y = _arg.y, rad = _arg.rad, move_speed = _arg.move_speed, group_id = _arg.group_id;
+    this.enterframe = __bind(this.enterframe, this);
+
+    this.move_speed = move_speed != null ? move_speed : 8;
+    this.sight_range = 0;
+    Bullet.__super__.constructor.apply(this, arguments);
+    this.x = x;
+    this.y = y;
+    this.lifetime = 0.8;
+    this.group_id = group_id != null ? group_id : 0;
+    range = this.getRange();
+    dx = this.x + Math.cos(rad) * range;
+    dy = this.y + Math.sin(rad) * range;
+    this.setDestination(dx, dy);
+  }
+
+  Bullet.prototype.getRange = function() {
+    return this.move_speed * this.lifetime * app.fps;
+  };
+
+  Bullet.prototype.draw = function() {
+    return this.addChild(new App.Entity.Circle(0, 0, 4, 'black', 'stroke'));
+  };
+
+  Bullet.prototype.isDead = function() {
+    return this.age / app.fps > this.lifetime;
+  };
+
+  Bullet.prototype.enterframe = function() {
+    var event, target;
+    if (!this.goAhead()) {
+      this.remove();
+    }
+    if (this.isDead()) {
+      this.remove();
+    }
+    target = this.find(App.Entity.GroupId.Enemy, 8);
+    if (target) {
+      event = new enchant.Event("hit");
+      event.other = this;
+      target.dispatchEvent(event);
+      return this.remove();
+    }
+  };
+
+  return Bullet;
+
+})(App.Entity.Mover);
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.DamageLabel = (function(_super) {
+
+  __extends(DamageLabel, _super);
+
+  function DamageLabel(text, x, y, color) {
+    if (color == null) {
+      color = 'red';
+    }
+    DamageLabel.__super__.constructor.apply(this, arguments);
+    this.x = x;
+    this.y = y;
+    this.addDiffByOther();
+    this.lifetime = 1;
+    this.color = color;
+    this.tl.moveBy(0, -15, app.fps * 1).and().fadeOut(app.fps * 1).removeFromScene();
+  }
+
+  DamageLabel.prototype.addDiffByOther = function() {
+    var _ref,
+      _this = this;
+    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(node) {
+      if (node instanceof DamageLabel) {
+        if (Math.abs(node.x - _this.x) < 8 && Math.abs(node.y - _this.y) < 8) {
+          p('add diff');
+          _this.x += 8;
+          return _this.y += 8;
+        }
+      }
+    });
+  };
+
+  return DamageLabel;
+
+})(enchant.Label);
+
+var IStairway,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+IStairway = (function() {
+
+  function IStairway() {
+    this.searchAndExec = __bind(this.searchAndExec, this);
+
+  }
+
+  IStairway.required = {
+    x: Number,
+    y: Number,
+    exec_range: Number,
+    event_type: String
+  };
+
+  IStairway.prototype.searchAndExec = function() {
+    var _ref,
+      _this = this;
+    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
+      var e;
+      if (i instanceof App.Entity.Player) {
+        if (Math.abs(i.x - _this.x) < _this.exec_range) {
+          if (Math.abs(i.y - _this.y) < _this.exec_range) {
+            e = new enchant.Event(_this.event_type);
+            return _this.scene.dispatchEvent(e);
+          }
+        }
+      }
+    });
+  };
+
+  return IStairway;
+
+})();
+
+App.Entity.StairwayUp = (function(_super) {
+
+  __extends(StairwayUp, _super);
+
+  function StairwayUp() {
+    var l;
+    StairwayUp.__super__.constructor.apply(this, arguments);
+    l = new Label('<');
+    this.addChild(l);
+    this.event_type = 'stairup';
+    this.exec_range = 10;
+    mixin(this, IStairway);
+    this.on('enterframe', this.searchAndExec);
+  }
+
+  return StairwayUp;
+
+})(enchant.Group);
+
+App.Entity.StairwayDown = (function(_super) {
+
+  __extends(StairwayDown, _super);
+
+  function StairwayDown() {
+    var l;
+    StairwayDown.__super__.constructor.apply(this, arguments);
+    l = new Label('>');
+    this.addChild(l);
+    this.event_type = 'stairdown';
+    this.exec_range = 10;
+    mixin(this, IStairway);
+    this.on('enterframe', this.searchAndExec);
+  }
+
+  return StairwayDown;
+
+})(enchant.Group);
+
 var PlayerSprite,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
@@ -932,10 +1270,10 @@ App.Entity.Player = (function(_super) {
 
   function Player() {
     this.enterframe = __bind(this.enterframe, this);
-    Player.__super__.constructor.apply(this, arguments);
-    this.group_id = App.Entity.GroupId.Player;
     this.move_speed = 6;
     this.sight_range = 1200;
+    Player.__super__.constructor.apply(this, arguments);
+    this.group_id = App.Entity.GroupId.Player;
     this.skills = [new App.Skill.MultiShot(this), new App.Skill.SingleShot(this)];
     mixin(this, App.Entity.ISkillSelector);
     this.on('fire', this.fire);
@@ -1009,6 +1347,8 @@ App.Entity.Player = (function(_super) {
 
   Player.prototype.draw = function() {
     this.sprite = new PlayerSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
     return this.addChild(this.sprite);
   };
 
@@ -1091,213 +1431,38 @@ PlayerSprite = (function(_super) {
   __extends(PlayerSprite, _super);
 
   function PlayerSprite() {
-    PlayerSprite.__super__.constructor.call(this, 32, 32);
-    this.row = 3;
-    this.image = app.assets['img/char/player.png'];
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
+    PlayerSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Chara]Civilian_Male_A.png');
     this.state_count = 0;
   }
 
   PlayerSprite.prototype.update = function(x, y) {
     var index, prefix;
-    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    index = 1;
+    prefix = this.row * (x && y ? (index += 3, x < 0 && y > 0 ? 0 : x > 0 && y > 0 ? 1 : x < 0 && y < 0 ? 2 : x > 0 && y < 0 ? 3 : void 0) : y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    index += (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 0;
+        case 1:
+          return +1;
+        case 2:
+          return 0;
+        case 3:
+          return -1;
+      }
+    }).call(this);
     if (prefix !== this.last_prefix) {
       this.state_count = 0;
     } else {
       this.state_count++;
     }
     this.last_prefix = prefix;
-    index = (function() {
-      switch (~~(this.state_count / 5) % 4) {
-        case 0:
-          return 1;
-        case 1:
-          return 2;
-        case 2:
-          return 1;
-        case 3:
-          return 0;
-      }
-    }).call(this);
     return this.frame = prefix + index;
   };
 
   return PlayerSprite;
 
-})(enchant.Sprite);
-
-
-App.Entity.ISkillSelector = (function() {
-
-  function ISkillSelector() {}
-
-  ISkillSelector.prototype.required = {
-    skills: Array,
-    age: Number
-  };
-
-  ISkillSelector.prototype.initialize = function() {
-    this._skill_index = 0;
-    return this._last_switch_age = this.age;
-  };
-
-  ISkillSelector.prototype._keyWaitEnough = function() {
-    return this.age - this._last_switch_age > 0.3 * app.fps;
-  };
-
-  ISkillSelector.prototype._updateKeyWait = function() {
-    return this._last_switch_age = this.age;
-  };
-
-  ISkillSelector.prototype.switchNextSkill = function() {
-    if (this._keyWaitEnough()) {
-      this._updateKeyWait();
-      if (this._skill_index + 1 < this.skills.length) {
-        return this._skill_index += 1;
-      } else {
-        return this._skill_index = 0;
-      }
-    }
-  };
-
-  ISkillSelector.prototype.switchPrevSkill = function() {
-    if (this._skill_index - 1 >= 0) {
-      return this._skill_index -= 1;
-    } else {
-      return this._skill_index = this.skills.length - 1;
-    }
-  };
-
-  ISkillSelector.prototype.selected_skill = function() {
-    return this.skills[this._skill_index];
-  };
-
-  ISkillSelector.prototype.fire = function(e) {
-    return this.selected_skill().exec(e.x, e.y);
-  };
-
-  return ISkillSelector;
-
-})();
-
-var IStairway,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-IStairway = (function() {
-
-  function IStairway() {
-    this.searchAndExec = __bind(this.searchAndExec, this);
-
-  }
-
-  IStairway.required = {
-    x: Number,
-    y: Number,
-    exec_range: Number,
-    event_type: String
-  };
-
-  IStairway.prototype.searchAndExec = function() {
-    var _ref,
-      _this = this;
-    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
-      var e;
-      if (i instanceof App.Entity.Player) {
-        if (Math.abs(i.x - _this.x) < _this.exec_range) {
-          if (Math.abs(i.y - _this.y) < _this.exec_range) {
-            e = new enchant.Event(_this.event_type);
-            return _this.scene.dispatchEvent(e);
-          }
-        }
-      }
-    });
-  };
-
-  return IStairway;
-
-})();
-
-App.Entity.StairwayUp = (function(_super) {
-
-  __extends(StairwayUp, _super);
-
-  function StairwayUp() {
-    var l;
-    StairwayUp.__super__.constructor.apply(this, arguments);
-    l = new Label('<');
-    this.addChild(l);
-    this.event_type = 'stairup';
-    this.exec_range = 10;
-    mixin(this, IStairway);
-    this.on('enterframe', this.searchAndExec);
-  }
-
-  return StairwayUp;
-
-})(enchant.Group);
-
-App.Entity.StairwayDown = (function(_super) {
-
-  __extends(StairwayDown, _super);
-
-  function StairwayDown() {
-    var l;
-    StairwayDown.__super__.constructor.apply(this, arguments);
-    l = new Label('>');
-    this.addChild(l);
-    this.event_type = 'stairdown';
-    this.exec_range = 10;
-    mixin(this, IStairway);
-    this.on('enterframe', this.searchAndExec);
-  }
-
-  return StairwayDown;
-
-})(enchant.Group);
-
-
-App.Entity.IStatus = (function() {
-
-  function IStatus() {}
-
-  IStatus.required = {
-    max_hp: Number,
-    parentNode: enchant.Node,
-    onDead: Function
-  };
-
-  IStatus.prototype.initialize = function() {
-    return this.hp = this.max_hp;
-  };
-
-  IStatus.prototype.damage = function(point) {
-    var color, _ref;
-    this.hp = Math.max(this.hp - point, 0);
-    this.checkAlive();
-    color = this instanceof App.Entity.Player ? 'purple' : 'red';
-    return (_ref = this.parentNode) != null ? _ref.addChild(new App.Entity.DamageLabel("" + point, this.x + 8, this.y, color)) : void 0;
-  };
-
-  IStatus.prototype.checkAlive = function() {
-    if (this.isDead()) {
-      return this.onDead();
-    }
-  };
-
-  IStatus.prototype.isDead = function() {
-    return this.hp <= 0;
-  };
-
-  IStatus.prototype.isAlive = function() {
-    return !this.isDead();
-  };
-
-  return IStatus;
-
-})();
+})(App.Entity.UditorSprite);
 
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
@@ -1446,19 +1611,21 @@ App.Scene.ObjectBoard = (function(_super) {
   };
 
   ObjectBoard.prototype.spawn = function() {
-    var add_monster, i, items, x, y, _i, _ref, _results,
+    var add_monster, canditates, i, items, x, y, _i, _ref, _results,
       _this = this;
+    canditates = [App.Entity.Slime, App.Entity.Goblin];
     items = _.select(this.childNodes, function(i) {
       return i instanceof App.Entity.Monster;
     });
-    if (items.length < 30) {
+    if (items.length < 90) {
       _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
       add_monster = function() {
-        var monster, nx, ny;
+        var Monster, monster, nx, ny;
         nx = x + Math.random() * _this.map.cell_size;
         ny = y + Math.random() * _this.map.cell_size;
         if (!_this.map.isWall(nx, ny)) {
-          monster = new App.Entity.Monster;
+          Monster = canditates[~~(Math.random() * canditates.length)];
+          monster = new Monster;
           monster.x = nx;
           monster.y = ny;
           return _this.addChild(monster);
@@ -1490,18 +1657,19 @@ App.Skill.MultiShot = (function(_super) {
   }
 
   MultiShot.prototype.exec = function(x, y) {
-    var blur_x, blur_y, bullet, i, move_speed, num, _i, _results;
+    var blur_x, blur_y, bullet, cx, cy, i, move_speed, num, _i, _ref, _results;
     num = 10;
     _results = [];
     for (i = _i = 1; _i <= 3; i = ++_i) {
+      _ref = this.center(), cx = _ref[0], cy = _ref[1];
       blur_x = 4 * (9 * Math.random() - 4);
       blur_y = 4 * (9 * Math.random() - 4);
       move_speed = 16 - Math.random() * 8;
       bullet = new App.Entity.Bullet({
-        rad: Math.atan2(y - this.actor.y + blur_y, x - this.actor.x + blur_x),
+        rad: Math.atan2(y - cy + blur_y, x - cx + blur_x),
         move_speed: move_speed,
-        x: this.actor.x,
-        y: this.actor.y,
+        x: cx,
+        y: cy,
         group_id: this.actor.group_id
       });
       _results.push(this.actor.parentNode.addChild(bullet));
@@ -1541,79 +1709,36 @@ App.Skill.SingleShot = (function(_super) {
 
 })(App.Skill.Base);
 
-var HPLabel,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
+var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-HPLabel = (function(_super) {
+App.Skill.Slash = (function(_super) {
 
-  __extends(HPLabel, _super);
+  __extends(Slash, _super);
 
-  function HPLabel(player) {
-    this.player = player;
-    this.enterframe = __bind(this.enterframe, this);
-
-    HPLabel.__super__.constructor.call(this);
-    this.css({
-      color: 'white'
-    });
-    this.width = app.width * 1;
-    this.height = app.height * 0.1;
-    this.backgroundColor = 'black';
-    this.$el = $(this._element);
-    this.on('enterframe', this.enterframe);
-    this.template = Handlebars.compile("<div>\n  Lv:<span style='color:red'>{{player.lv}}</span>\n  ({{player.exp}}/{{next_level_exp}})\n  HP:{{player.hp}}/{{player.max_hp}}\n  STR:{{player.status.str}} INT:{{player.status.int}} DEX: {{player.status.dex}}\n</div>\n<div> {{skill.constructor.name}} Lv.{{skill.lv}} </div>");
+  function Slash() {
+    return Slash.__super__.constructor.apply(this, arguments);
   }
 
-  HPLabel.prototype.enterframe = function() {
-    var skill, skills;
-    skill = this.player.selected_skill();
-    this.text = this.template({
-      player: this.player,
-      skill: this.player.selected_skill(),
-      next_level_exp: this.player.next_level_exp()
+  Slash.prototype.exec = function(x, y) {
+    var bullet, move_speed;
+    move_speed = 16;
+    bullet = new App.Entity.Bullet({
+      rad: Math.atan2(y - this.actor.y, x - this.actor.x),
+      move_speed: move_speed,
+      x: this.actor.x,
+      y: this.actor.y,
+      group_id: this.group_id
     });
-    return skills = (function() {
-      var _i, _len, _ref, _results;
-      _ref = this.player.skills;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        skill = _ref[_i];
-        _results.push(p.constructor.name);
-      }
-      return _results;
-    }).call(this);
+    return this.actor.parentNode.addChild(bullet);
   };
 
-  return HPLabel;
+  return Slash;
 
-})(App.UI.Dom);
+})(App.Skill.Base);
 
-App.UI.Main = (function(_super) {
-
-  __extends(Main, _super);
-
-  function Main(player) {
-    var hp_label;
-    this.player = player;
-    Main.__super__.constructor.apply(this, arguments);
-    this.x = 0;
-    this.y = 0;
-    hp_label = new HPLabel(this.player);
-    hp_label.x = 0;
-    hp_label.y = app.height - hp_label.height;
-    this.addChild(hp_label);
-  }
-
-  return Main;
-
-})(enchant.DomLayer);
-
-var HPLabel,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 App.UI.Dom = (function(_super) {
 
@@ -1636,6 +1761,11 @@ App.UI.Dom = (function(_super) {
   return Dom;
 
 })(enchant.Label);
+
+var HPLabel,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 HPLabel = (function(_super) {
 
