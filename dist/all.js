@@ -575,118 +575,6 @@ App.Core = (function(_super) {
 
 })(enchant.Core);
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-App.Entity.Bullet = (function(_super) {
-
-  __extends(Bullet, _super);
-
-  Bullet.prototype.passable = true;
-
-  function Bullet(_arg) {
-    var dx, dy, group_id, move_speed, rad, range, x, y;
-    x = _arg.x, y = _arg.y, rad = _arg.rad, move_speed = _arg.move_speed, group_id = _arg.group_id;
-    this.enterframe = __bind(this.enterframe, this);
-
-    Bullet.__super__.constructor.apply(this, arguments);
-    this.x = x;
-    this.y = y;
-    this.move_speed = move_speed != null ? move_speed : 8;
-    this.lifetime = 0.8;
-    this.group_id = group_id != null ? group_id : 0;
-    range = this.getRange();
-    dx = this.x + Math.cos(rad) * range;
-    dy = this.y + Math.sin(rad) * range;
-    this.setDestination(dx, dy);
-  }
-
-  Bullet.prototype.getRange = function() {
-    return this.move_speed * this.lifetime * app.fps;
-  };
-
-  Bullet.prototype.draw = function() {
-    return this.addChild(new App.Entity.Circle(0, 0, 4, 'black', 'stroke'));
-  };
-
-  Bullet.prototype.isDead = function() {
-    return this.age / app.fps > this.lifetime;
-  };
-
-  Bullet.prototype.enterframe = function() {
-    var event, target;
-    if (!this.goAhead()) {
-      this.remove();
-    }
-    if (this.isDead()) {
-      this.remove();
-    }
-    target = this.find(App.Entity.GroupId.Enemy, 8);
-    if (target) {
-      event = new enchant.Event("hit");
-      event.other = this;
-      target.dispatchEvent(event);
-      return this.remove();
-    }
-  };
-
-  return Bullet;
-
-})(App.Entity.Mover);
-
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-App.Entity.DamageLabel = (function(_super) {
-
-  __extends(DamageLabel, _super);
-
-  function DamageLabel(text, x, y, color) {
-    if (color == null) {
-      color = 'red';
-    }
-    this.enterframe = __bind(this.enterframe, this);
-
-    DamageLabel.__super__.constructor.apply(this, arguments);
-    this.x = x;
-    this.y = y;
-    this.addDiffByOther();
-    this.lifetime = 1;
-    this.color = color;
-    this.on('enterframe', this.enterframe);
-  }
-
-  DamageLabel.prototype.addDiffByOther = function() {
-    var _ref,
-      _this = this;
-    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(node) {
-      if (node instanceof DamageLabel) {
-        if (Math.abs(node.x - _this.x) < 8 && Math.abs(node.y - _this.y) < 8) {
-          p('add diff');
-          _this.x += 8;
-          return _this.y += 8;
-        }
-      }
-    });
-  };
-
-  DamageLabel.prototype.enterframe = function() {
-    var progress;
-    progress = this.age / (app.fps * this.lifetime);
-    if (progress < 1) {
-      this.y -= 0.5;
-      return this.opacity = 1 - progress;
-    } else {
-      return this.remove();
-    }
-  };
-
-  return DamageLabel;
-
-})(enchant.Label);
-
 
 App.Entity.ILeveler = (function() {
 
@@ -710,6 +598,101 @@ App.Entity.ILeveler = (function() {
   };
 
   return ILeveler;
+
+})();
+
+
+App.Entity.ISkillSelector = (function() {
+
+  function ISkillSelector() {}
+
+  ISkillSelector.prototype.required = {
+    skills: Array,
+    age: Number
+  };
+
+  ISkillSelector.prototype.initialize = function() {
+    this._skill_index = 0;
+    return this._last_switch_age = this.age;
+  };
+
+  ISkillSelector.prototype._keyWaitEnough = function() {
+    return this.age - this._last_switch_age > 0.3 * app.fps;
+  };
+
+  ISkillSelector.prototype._updateKeyWait = function() {
+    return this._last_switch_age = this.age;
+  };
+
+  ISkillSelector.prototype.switchNextSkill = function() {
+    if (this._keyWaitEnough()) {
+      this._updateKeyWait();
+      if (this._skill_index + 1 < this.skills.length) {
+        return this._skill_index += 1;
+      } else {
+        return this._skill_index = 0;
+      }
+    }
+  };
+
+  ISkillSelector.prototype.switchPrevSkill = function() {
+    if (this._skill_index - 1 >= 0) {
+      return this._skill_index -= 1;
+    } else {
+      return this._skill_index = this.skills.length - 1;
+    }
+  };
+
+  ISkillSelector.prototype.selected_skill = function() {
+    return this.skills[this._skill_index];
+  };
+
+  ISkillSelector.prototype.fire = function(e) {
+    return this.selected_skill().exec(e.x, e.y);
+  };
+
+  return ISkillSelector;
+
+})();
+
+
+App.Entity.IStatus = (function() {
+
+  function IStatus() {}
+
+  IStatus.required = {
+    max_hp: Number,
+    parentNode: enchant.Node,
+    onDead: Function
+  };
+
+  IStatus.prototype.initialize = function() {
+    return this.hp = this.max_hp;
+  };
+
+  IStatus.prototype.damage = function(point) {
+    var color, _ref;
+    this.hp = Math.max(this.hp - point, 0);
+    this.checkAlive();
+    color = this instanceof App.Entity.Player ? 'purple' : 'red';
+    return (_ref = this.parentNode) != null ? _ref.addChild(new App.Entity.DamageLabel("" + point, this.x + 8, this.y, color)) : void 0;
+  };
+
+  IStatus.prototype.checkAlive = function() {
+    if (this.isDead()) {
+      return this.onDead();
+    }
+  };
+
+  IStatus.prototype.isDead = function() {
+    return this.hp <= 0;
+  };
+
+  IStatus.prototype.isAlive = function() {
+    return !this.isDead();
+  };
+
+  return IStatus;
 
 })();
 
@@ -943,6 +926,181 @@ App.Entity.Mouse = (function(_super) {
 
 })(App.Entity.Mover);
 
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Bullet = (function(_super) {
+
+  __extends(Bullet, _super);
+
+  Bullet.prototype.passable = true;
+
+  function Bullet(_arg) {
+    var dx, dy, group_id, move_speed, rad, range, x, y;
+    x = _arg.x, y = _arg.y, rad = _arg.rad, move_speed = _arg.move_speed, group_id = _arg.group_id;
+    this.enterframe = __bind(this.enterframe, this);
+
+    Bullet.__super__.constructor.apply(this, arguments);
+    this.x = x;
+    this.y = y;
+    this.move_speed = move_speed != null ? move_speed : 8;
+    this.lifetime = 0.8;
+    this.group_id = group_id != null ? group_id : 0;
+    range = this.getRange();
+    dx = this.x + Math.cos(rad) * range;
+    dy = this.y + Math.sin(rad) * range;
+    this.setDestination(dx, dy);
+  }
+
+  Bullet.prototype.getRange = function() {
+    return this.move_speed * this.lifetime * app.fps;
+  };
+
+  Bullet.prototype.draw = function() {
+    return this.addChild(new App.Entity.Circle(0, 0, 4, 'black', 'stroke'));
+  };
+
+  Bullet.prototype.isDead = function() {
+    return this.age / app.fps > this.lifetime;
+  };
+
+  Bullet.prototype.enterframe = function() {
+    var event, target;
+    if (!this.goAhead()) {
+      this.remove();
+    }
+    if (this.isDead()) {
+      this.remove();
+    }
+    target = this.find(App.Entity.GroupId.Enemy, 8);
+    if (target) {
+      event = new enchant.Event("hit");
+      event.other = this;
+      target.dispatchEvent(event);
+      return this.remove();
+    }
+  };
+
+  return Bullet;
+
+})(App.Entity.Mover);
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.DamageLabel = (function(_super) {
+
+  __extends(DamageLabel, _super);
+
+  function DamageLabel(text, x, y, color) {
+    if (color == null) {
+      color = 'red';
+    }
+    DamageLabel.__super__.constructor.apply(this, arguments);
+    this.x = x;
+    this.y = y;
+    this.addDiffByOther();
+    this.lifetime = 1;
+    this.color = color;
+    this.tl.moveBy(0, -15, app.fps * 1).and().fadeOut(app.fps * 1).removeFromScene();
+  }
+
+  DamageLabel.prototype.addDiffByOther = function() {
+    var _ref,
+      _this = this;
+    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(node) {
+      if (node instanceof DamageLabel) {
+        if (Math.abs(node.x - _this.x) < 8 && Math.abs(node.y - _this.y) < 8) {
+          p('add diff');
+          _this.x += 8;
+          return _this.y += 8;
+        }
+      }
+    });
+  };
+
+  return DamageLabel;
+
+})(enchant.Label);
+
+var IStairway,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+IStairway = (function() {
+
+  function IStairway() {
+    this.searchAndExec = __bind(this.searchAndExec, this);
+
+  }
+
+  IStairway.required = {
+    x: Number,
+    y: Number,
+    exec_range: Number,
+    event_type: String
+  };
+
+  IStairway.prototype.searchAndExec = function() {
+    var _ref,
+      _this = this;
+    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
+      var e;
+      if (i instanceof App.Entity.Player) {
+        if (Math.abs(i.x - _this.x) < _this.exec_range) {
+          if (Math.abs(i.y - _this.y) < _this.exec_range) {
+            e = new enchant.Event(_this.event_type);
+            return _this.scene.dispatchEvent(e);
+          }
+        }
+      }
+    });
+  };
+
+  return IStairway;
+
+})();
+
+App.Entity.StairwayUp = (function(_super) {
+
+  __extends(StairwayUp, _super);
+
+  function StairwayUp() {
+    var l;
+    StairwayUp.__super__.constructor.apply(this, arguments);
+    l = new Label('<');
+    this.addChild(l);
+    this.event_type = 'stairup';
+    this.exec_range = 10;
+    mixin(this, IStairway);
+    this.on('enterframe', this.searchAndExec);
+  }
+
+  return StairwayUp;
+
+})(enchant.Group);
+
+App.Entity.StairwayDown = (function(_super) {
+
+  __extends(StairwayDown, _super);
+
+  function StairwayDown() {
+    var l;
+    StairwayDown.__super__.constructor.apply(this, arguments);
+    l = new Label('>');
+    this.addChild(l);
+    this.event_type = 'stairdown';
+    this.exec_range = 10;
+    mixin(this, IStairway);
+    this.on('enterframe', this.searchAndExec);
+  }
+
+  return StairwayDown;
+
+})(enchant.Group);
+
 var PlayerSprite,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
@@ -1167,178 +1325,6 @@ PlayerSprite = (function(_super) {
   return PlayerSprite;
 
 })(App.Entity.UditorSprite);
-
-
-App.Entity.ISkillSelector = (function() {
-
-  function ISkillSelector() {}
-
-  ISkillSelector.prototype.required = {
-    skills: Array,
-    age: Number
-  };
-
-  ISkillSelector.prototype.initialize = function() {
-    this._skill_index = 0;
-    return this._last_switch_age = this.age;
-  };
-
-  ISkillSelector.prototype._keyWaitEnough = function() {
-    return this.age - this._last_switch_age > 0.3 * app.fps;
-  };
-
-  ISkillSelector.prototype._updateKeyWait = function() {
-    return this._last_switch_age = this.age;
-  };
-
-  ISkillSelector.prototype.switchNextSkill = function() {
-    if (this._keyWaitEnough()) {
-      this._updateKeyWait();
-      if (this._skill_index + 1 < this.skills.length) {
-        return this._skill_index += 1;
-      } else {
-        return this._skill_index = 0;
-      }
-    }
-  };
-
-  ISkillSelector.prototype.switchPrevSkill = function() {
-    if (this._skill_index - 1 >= 0) {
-      return this._skill_index -= 1;
-    } else {
-      return this._skill_index = this.skills.length - 1;
-    }
-  };
-
-  ISkillSelector.prototype.selected_skill = function() {
-    return this.skills[this._skill_index];
-  };
-
-  ISkillSelector.prototype.fire = function(e) {
-    return this.selected_skill().exec(e.x, e.y);
-  };
-
-  return ISkillSelector;
-
-})();
-
-var IStairway,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-IStairway = (function() {
-
-  function IStairway() {
-    this.searchAndExec = __bind(this.searchAndExec, this);
-
-  }
-
-  IStairway.required = {
-    x: Number,
-    y: Number,
-    exec_range: Number,
-    event_type: String
-  };
-
-  IStairway.prototype.searchAndExec = function() {
-    var _ref,
-      _this = this;
-    return _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
-      var e;
-      if (i instanceof App.Entity.Player) {
-        if (Math.abs(i.x - _this.x) < _this.exec_range) {
-          if (Math.abs(i.y - _this.y) < _this.exec_range) {
-            e = new enchant.Event(_this.event_type);
-            return _this.scene.dispatchEvent(e);
-          }
-        }
-      }
-    });
-  };
-
-  return IStairway;
-
-})();
-
-App.Entity.StairwayUp = (function(_super) {
-
-  __extends(StairwayUp, _super);
-
-  function StairwayUp() {
-    var l;
-    StairwayUp.__super__.constructor.apply(this, arguments);
-    l = new Label('<');
-    this.addChild(l);
-    this.event_type = 'stairup';
-    this.exec_range = 10;
-    mixin(this, IStairway);
-    this.on('enterframe', this.searchAndExec);
-  }
-
-  return StairwayUp;
-
-})(enchant.Group);
-
-App.Entity.StairwayDown = (function(_super) {
-
-  __extends(StairwayDown, _super);
-
-  function StairwayDown() {
-    var l;
-    StairwayDown.__super__.constructor.apply(this, arguments);
-    l = new Label('>');
-    this.addChild(l);
-    this.event_type = 'stairdown';
-    this.exec_range = 10;
-    mixin(this, IStairway);
-    this.on('enterframe', this.searchAndExec);
-  }
-
-  return StairwayDown;
-
-})(enchant.Group);
-
-
-App.Entity.IStatus = (function() {
-
-  function IStatus() {}
-
-  IStatus.required = {
-    max_hp: Number,
-    parentNode: enchant.Node,
-    onDead: Function
-  };
-
-  IStatus.prototype.initialize = function() {
-    return this.hp = this.max_hp;
-  };
-
-  IStatus.prototype.damage = function(point) {
-    var color, _ref;
-    this.hp = Math.max(this.hp - point, 0);
-    this.checkAlive();
-    color = this instanceof App.Entity.Player ? 'purple' : 'red';
-    return (_ref = this.parentNode) != null ? _ref.addChild(new App.Entity.DamageLabel("" + point, this.x + 8, this.y, color)) : void 0;
-  };
-
-  IStatus.prototype.checkAlive = function() {
-    if (this.isDead()) {
-      return this.onDead();
-    }
-  };
-
-  IStatus.prototype.isDead = function() {
-    return this.hp <= 0;
-  };
-
-  IStatus.prototype.isAlive = function() {
-    return !this.isDead();
-  };
-
-  return IStatus;
-
-})();
 
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,

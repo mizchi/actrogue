@@ -4,10 +4,14 @@ class App.Entity.DamageLabel extends enchant.Label
     @x = x
     @y = y
     @addDiffByOther()
-
     @lifetime = 1
     @color = color
-    @on 'enterframe', @enterframe
+
+    @tl
+      .moveBy(0, -15, app.fps * 1)
+      .and()
+      .fadeOut(app.fps * 1)
+      .removeFromScene()
 
   addDiffByOther: ->
     _.each @parentNode?.childNodes, (node) =>
@@ -16,11 +20,3 @@ class App.Entity.DamageLabel extends enchant.Label
           p 'add diff'
           @x += 8
           @y += 8
-
-  enterframe: =>
-    progress = @age/(app.fps * @lifetime)
-    if progress < 1
-      @y -= 0.5
-      @opacity = 1 - progress
-    else
-      @remove()
