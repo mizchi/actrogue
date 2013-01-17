@@ -1,5 +1,3 @@
-
-
 class App.Entity.Slime extends App.Entity.Monster
   constructor: ->
     @move_speed = 1
@@ -10,7 +8,7 @@ class App.Entity.Slime extends App.Entity.Monster
     super
     @group_id = App.Entity.GroupId.Enemy
 
-    mixin @, App.AI.IBasic
+    mixin @, App.Entity.IBasicAI
 
   onDead: -> # TODO
 

@@ -414,80 +414,6 @@ App.Entity.Monster = (function(_super) {
 
 })(App.Entity.Mover);
 
-App.AI = {};
-
-App.AI.IBasic = (function() {
-
-  function IBasic() {
-    this.guess = __bind(this.guess, this);
-
-  }
-
-  IBasic.required = {
-    move_speed: Number,
-    sight_range: Number,
-    group_id: Number,
-    setDestination: Function
-  };
-
-  IBasic.prototype.initialize = function() {
-    return this.mode = 'idle';
-  };
-
-  IBasic.prototype.guess = function() {
-    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
-    switch (this.mode) {
-      case "idle":
-        target = this.findInSight(App.Entity.GroupId.Player);
-        if (target) {
-          this.mode = "trace";
-          return this.setDestination(target.x, target.y);
-        } else {
-          if (Math.random() < 1 / app.fps) {
-            this.mode = "wander";
-            return this.setRandomDestination();
-          }
-        }
-        break;
-      case "trace":
-        attack_range = 10;
-        attack_interval = app.fps;
-        attack_power = 1;
-        if ((_ref = this.cnt) == null) {
-          this.cnt = 0;
-        }
-        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
-        if (enemy_in_range instanceof App.Entity.Player) {
-          if (!(this.cnt++ % attack_interval)) {
-            enemy_in_range.damage(attack_power);
-          }
-          return;
-        }
-        if (!this.goAhead()) {
-          target = this.findInSight(App.Entity.GroupId.Player);
-          if (target) {
-            return this.setDestination(target.x, target.y);
-          } else {
-            this.removeDestination();
-            return this.mode = "idle";
-          }
-        }
-        break;
-      case "wander":
-        if (!this.goAhead()) {
-          return this.mode = "idle";
-        }
-    }
-  };
-
-  IBasic.prototype.setRandomDestination = function() {
-    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
-  };
-
-  return IBasic;
-
-})();
-
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -574,6 +500,80 @@ App.Core = (function(_super) {
   return Core;
 
 })(enchant.Core);
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+App.Entity.IBasicAI = (function() {
+
+  function IBasicAI() {
+    this.guess = __bind(this.guess, this);
+
+  }
+
+  IBasicAI.required = {
+    move_speed: Number,
+    sight_range: Number,
+    group_id: Number,
+    setDestination: Function
+  };
+
+  IBasicAI.prototype.initialize = function() {
+    return this.mode = 'idle';
+  };
+
+  IBasicAI.prototype.guess = function() {
+    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
+    switch (this.mode) {
+      case "idle":
+        target = this.findInSight(App.Entity.GroupId.Player);
+        if (target) {
+          this.mode = "trace";
+          return this.setDestination(target.x, target.y);
+        } else {
+          if (Math.random() < 1 / app.fps) {
+            this.mode = "wander";
+            return this.setRandomDestination();
+          }
+        }
+        break;
+      case "trace":
+        attack_range = 10;
+        attack_interval = app.fps;
+        attack_power = 1;
+        if ((_ref = this.cnt) == null) {
+          this.cnt = 0;
+        }
+        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
+        if (enemy_in_range instanceof App.Entity.Player) {
+          if (!(this.cnt++ % attack_interval)) {
+            enemy_in_range.damage(attack_power);
+          }
+          return;
+        }
+        if (!this.goAhead()) {
+          target = this.findInSight(App.Entity.GroupId.Player);
+          if (target) {
+            return this.setDestination(target.x, target.y);
+          } else {
+            this.removeDestination();
+            return this.mode = "idle";
+          }
+        }
+        break;
+      case "wander":
+        if (!this.goAhead()) {
+          return this.mode = "idle";
+        }
+    }
+  };
+
+  IBasicAI.prototype.setRandomDestination = function() {
+    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
+  };
+
+  return IBasicAI;
+
+})();
 
 
 App.Entity.ILeveler = (function() {
@@ -838,7 +838,7 @@ App.Entity.Slime = (function(_super) {
     this.mode = 'idle';
     Slime.__super__.constructor.apply(this, arguments);
     this.group_id = App.Entity.GroupId.Enemy;
-    mixin(this, App.AI.IBasic);
+    mixin(this, App.Entity.IBasicAI);
   }
 
   Slime.prototype.onDead = function() {};
