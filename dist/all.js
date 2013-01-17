@@ -397,7 +397,7 @@ App.Entity.Monster = (function(_super) {
     var other, _ref,
       _this = this;
     other = _arg.other;
-    this.damage(2);
+    this.damage(1 + ~~(Math.random() * 3));
     if (this.isDead()) {
       _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
         if (i.group_id === other.group_id) {
@@ -802,14 +802,29 @@ App.Entity.Map = (function(_super) {
       return _results;
     }).call(this);
     this.layer = [];
-    map = new ROT.Map.Uniform(this.cell_x, this.cell_y);
+    map = new ROT.Map.Cellular(this.cell_x, this.cell_y);
+    map.randomize(0.4);
     return map.create(function(x, y, val) {
       return _this.hitmap[x][y] = val;
     });
   };
 
   Map.prototype.isWall = function(x, y) {
-    return !!this.hitmap[~~(y / this.cell_size)][~~(x / this.cell_size)];
+    var row, v;
+    row = this.hitmap[~~(y / this.cell_size)];
+    if (row == null) {
+      return true;
+    } else {
+      v = row[~~(x / this.cell_size)];
+      switch (v) {
+        case 1:
+          return true;
+        case void 0:
+          return true;
+        default:
+          return false;
+      }
+    }
   };
 
   Map.prototype.passable = function(x, y) {
