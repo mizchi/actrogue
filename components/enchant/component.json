@@ -1,0 +1,8 @@
+{
+  "name": "enchant",
+  "version": "0.6.2",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wise9/enchant.js.git"
+  }
+}

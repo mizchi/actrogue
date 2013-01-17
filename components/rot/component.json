@@ -1,0 +1,9 @@
+{
+  "name": "rot",
+  "version": "0.0.0",
+  "commit": "3487d85021f6091cec20004e1a286f728bdb8f5a",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ondras/rot.js.git"
+  }
+}
