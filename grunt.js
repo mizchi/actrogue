@@ -32,6 +32,8 @@ module.exports = function( grunt ) {
           "lib/skills/base.js",
           "lib/ui/domt.js",
           "lib/entities/uditor_sprite.js",
+          "lib/entities/mover.js",
+          "lib/entities/monster.js",
           "lib/shapes/*.js",
           "lib/entities/mover.js",
           "lib/**/*.js"

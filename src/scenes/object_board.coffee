@@ -41,7 +41,7 @@ class App.Scene.ObjectBoard extends enchant.Group
         nx = x + Math.random() * @map.cell_size
         ny = y + Math.random() * @map.cell_size
         unless @map.isWall(nx, ny)
-          monster = new App.Entity.Monster
+          monster = new App.Entity.Slime
           monster.x = nx
           monster.y = ny
           @addChild monster

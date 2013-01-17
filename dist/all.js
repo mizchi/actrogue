@@ -165,6 +165,10 @@ App.Skill.Base = (function() {
 
   Base.prototype.fire = function(x, y) {};
 
+  Base.prototype.center = function() {
+    return [this.actor.x + this.actor.width / 2, this.actor.y + this.actor.height / 2];
+  };
+
   return Base;
 
 })();
@@ -187,44 +191,6 @@ App.Entity.UditorSprite = (function(_super) {
   }
 
   return UditorSprite;
-
-})(enchant.Sprite);
-
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-App.Entity.Circle = (function(_super) {
-
-  __extends(Circle, _super);
-
-  function Circle(x, y, size, color, style) {
-    this.size = size;
-    this.color = color != null ? color : 'black';
-    this.style = style != null ? style : 'fill';
-    Circle.__super__.constructor.apply(this, arguments);
-    this.width = this.size;
-    this.height = this.size;
-    this.draw();
-  }
-
-  Circle.prototype.draw = function() {
-    var surface;
-    surface = new enchant.Surface(this.size, this.size);
-    this.g = surface.context;
-    this.g.beginPath();
-    this.g.fillStyle = this.color;
-    this.g.strokeStyle = this.color;
-    this.g.arc(this.size / 2, this.size / 2, this.size / 2, 0, Math.PI * 2, true);
-    if (this.style === 'fill') {
-      this.g.fill();
-    }
-    if (this.style === 'stroke') {
-      this.g.stroke();
-    }
-    return this.image = surface;
-  };
-
-  return Circle;
 
 })(enchant.Sprite);
 
@@ -305,7 +271,10 @@ App.Entity.ITracer = (function() {
   };
 
   ITracer.prototype.setDestination = function(x, y) {
-    this.destination = new Position(x, y);
+    this.destination = {
+      x: x,
+      y: y
+    };
     this.direction = Math.atan2(this.destination.y - this.y, this.destination.x - this.x);
     this.x_speed = Math.cos(this.direction) * this.move_speed;
     return this.y_speed = Math.sin(this.direction) * this.move_speed;
@@ -394,6 +363,157 @@ App.Entity.Mover = (function(_super) {
   return Mover;
 
 })(enchant.Group);
+
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Monster = (function(_super) {
+
+  __extends(Monster, _super);
+
+  Monster.prototype.passable = false;
+
+  function Monster() {
+    this.hit = __bind(this.hit, this);
+    Monster.__super__.constructor.apply(this, arguments);
+    this.destination = null;
+    mixin(this, App.Entity.IStatus);
+    this.on('hit', this.hit);
+  }
+
+  Monster.prototype.onDead = function() {};
+
+  Monster.prototype.hit = function(_arg) {
+    var other, _ref,
+      _this = this;
+    other = _arg.other;
+    this.damage(2);
+    if (this.isDead()) {
+      _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
+        if (i.group_id === other.group_id) {
+          return typeof i.gainExp === "function" ? i.gainExp(1) : void 0;
+        }
+      });
+      return this.remove();
+    }
+  };
+
+  return Monster;
+
+})(App.Entity.Mover);
+
+App.AI = {};
+
+App.AI.IBasic = (function() {
+
+  function IBasic() {
+    this.guess = __bind(this.guess, this);
+
+  }
+
+  IBasic.required = {
+    move_speed: Number,
+    sight_range: Number,
+    group_id: Number,
+    setDestination: Function
+  };
+
+  IBasic.prototype.initialize = function() {
+    return this.mode = 'idle';
+  };
+
+  IBasic.prototype.guess = function() {
+    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
+    switch (this.mode) {
+      case "idle":
+        target = this.findInSight(App.Entity.GroupId.Player);
+        if (target) {
+          this.mode = "trace";
+          return this.setDestination(target.x, target.y);
+        } else {
+          if (Math.random() < 1 / app.fps) {
+            this.mode = "wander";
+            return this.setRandomDestination();
+          }
+        }
+        break;
+      case "trace":
+        attack_range = 10;
+        attack_interval = app.fps;
+        attack_power = 1;
+        if ((_ref = this.cnt) == null) {
+          this.cnt = 0;
+        }
+        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
+        if (enemy_in_range instanceof App.Entity.Player) {
+          if (!(this.cnt++ % attack_interval)) {
+            enemy_in_range.damage(attack_power);
+          }
+          return;
+        }
+        if (!this.goAhead()) {
+          target = this.findInSight(App.Entity.GroupId.Player);
+          if (target) {
+            return this.setDestination(target.x, target.y);
+          } else {
+            this.removeDestination();
+            return this.mode = "idle";
+          }
+        }
+        break;
+      case "wander":
+        if (!this.goAhead()) {
+          return this.mode = "idle";
+        }
+    }
+  };
+
+  IBasic.prototype.setRandomDestination = function() {
+    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
+  };
+
+  return IBasic;
+
+})();
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Circle = (function(_super) {
+
+  __extends(Circle, _super);
+
+  function Circle(x, y, size, color, style) {
+    this.size = size;
+    this.color = color != null ? color : 'black';
+    this.style = style != null ? style : 'fill';
+    Circle.__super__.constructor.apply(this, arguments);
+    this.width = this.size;
+    this.height = this.size;
+    this.draw();
+  }
+
+  Circle.prototype.draw = function() {
+    var surface;
+    surface = new enchant.Surface(this.size, this.size);
+    this.g = surface.context;
+    this.g.beginPath();
+    this.g.fillStyle = this.color;
+    this.g.strokeStyle = this.color;
+    this.g.arc(this.size / 2, this.size / 2, this.size / 2, 0, Math.PI * 2, true);
+    if (this.style === 'fill') {
+      this.g.fill();
+    }
+    if (this.style === 'stroke') {
+      this.g.stroke();
+    }
+    return this.image = surface;
+  };
+
+  return Circle;
+
+})(enchant.Sprite);
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -707,163 +827,6 @@ App.Entity.Map = (function(_super) {
 
 })(enchant.Sprite);
 
-var Position, SlimeSprite,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-Position = (function() {
-
-  function Position(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  return Position;
-
-})();
-
-App.Entity.Monster = (function(_super) {
-
-  __extends(Monster, _super);
-
-  Monster.prototype.passable = false;
-
-  function Monster() {
-    this.enterframe = __bind(this.enterframe, this);
-
-    this.hit = __bind(this.hit, this);
-    Monster.__super__.constructor.apply(this, arguments);
-    this.destination = null;
-    this.move_speed = 1;
-    this.sight_range = 120;
-    this.group_id = App.Entity.GroupId.Enemy;
-    this.mode = 'idle';
-    this.on('hit', this.hit);
-    this.max_hp = 10;
-    mixin(this, App.Entity.IStatus);
-  }
-
-  Monster.prototype.hit = function(_arg) {
-    var other, _ref,
-      _this = this;
-    other = _arg.other;
-    this.damage(2);
-    if (this.isDead()) {
-      _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
-        if (i.group_id === other.group_id) {
-          return typeof i.gainExp === "function" ? i.gainExp(1) : void 0;
-        }
-      });
-      return this.remove();
-    }
-  };
-
-  Monster.prototype.onDead = function() {};
-
-  Monster.prototype.setRandomDestination = function() {
-    return this.setDestination(this.x + (Math.random() - 0.5) * this.sight_range, this.y + (Math.random() - 0.5) * this.sight_range);
-  };
-
-  Monster.prototype.enterframe = function() {
-    var attack_interval, attack_power, attack_range, enemy_in_range, target, _ref;
-    Monster.__super__.enterframe.apply(this, arguments);
-    switch (this.mode) {
-      case "idle":
-        target = this.findInSight(App.Entity.GroupId.Player);
-        if (target) {
-          this.mode = "trace";
-          return this.setDestination(target.x, target.y);
-        } else {
-          if (Math.random() < 1 / app.fps) {
-            this.mode = "wander";
-            return this.setRandomDestination();
-          }
-        }
-        break;
-      case "trace":
-        attack_range = 10;
-        attack_interval = app.fps;
-        attack_power = 1;
-        if ((_ref = this.cnt) == null) {
-          this.cnt = 0;
-        }
-        enemy_in_range = this.find(App.Entity.GroupId.Player, attack_range);
-        if (enemy_in_range instanceof App.Entity.Player) {
-          if (!(this.cnt++ % attack_interval)) {
-            enemy_in_range.damage(attack_power);
-          }
-          return;
-        }
-        if (!this.goAhead()) {
-          target = this.findInSight(App.Entity.GroupId.Player);
-          if (target) {
-            return this.setDestination(target.x, target.y);
-          } else {
-            this.removeDestination();
-            return this.mode = "idle";
-          }
-        }
-        break;
-      case "wander":
-        if (!this.goAhead()) {
-          return this.mode = "idle";
-        }
-    }
-  };
-
-  Monster.prototype.draw = function() {
-    this.sprite = new SlimeSprite;
-    this.width = this.sprite.width;
-    this.height = this.sprite.height;
-    return this.addChild(this.sprite);
-  };
-
-  Monster.prototype.onMove = function(x, y) {
-    return this.sprite.update(x, y);
-  };
-
-  return Monster;
-
-})(App.Entity.Mover);
-
-SlimeSprite = (function(_super) {
-
-  __extends(SlimeSprite, _super);
-
-  function SlimeSprite() {
-    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
-    this.state_count = 0;
-  }
-
-  SlimeSprite.prototype.update = function(x, y) {
-    var index, prefix;
-    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
-    if (prefix !== this.last_prefix) {
-      this.state_count = 0;
-    } else {
-      this.state_count++;
-    }
-    this.last_prefix = prefix;
-    index = (function() {
-      switch (~~(this.state_count / 5) % 4) {
-        case 0:
-          return 1;
-        case 1:
-          return 2;
-        case 2:
-          return 1;
-        case 3:
-          return 0;
-      }
-    }).call(this);
-    return this.frame = prefix + index;
-  };
-
-  return SlimeSprite;
-
-})(App.Entity.UditorSprite);
-
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1169,6 +1132,85 @@ App.Entity.ISkillSelector = (function() {
 
 })();
 
+var SlimeSprite,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+App.Entity.Slime = (function(_super) {
+
+  __extends(Slime, _super);
+
+  function Slime() {
+    this.enterframe = __bind(this.enterframe, this);
+    this.move_speed = 1;
+    this.sight_range = 120;
+    this.max_hp = 10;
+    this.mode = 'idle';
+    Slime.__super__.constructor.apply(this, arguments);
+    this.group_id = App.Entity.GroupId.Enemy;
+    mixin(this, App.AI.IBasic);
+  }
+
+  Slime.prototype.onDead = function() {};
+
+  Slime.prototype.enterframe = function() {
+    Slime.__super__.enterframe.apply(this, arguments);
+    return this.guess();
+  };
+
+  Slime.prototype.draw = function() {
+    this.sprite = new SlimeSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
+    return this.addChild(this.sprite);
+  };
+
+  Slime.prototype.onMove = function(x, y) {
+    return this.sprite.update(x, y);
+  };
+
+  return Slime;
+
+})(App.Entity.Monster);
+
+SlimeSprite = (function(_super) {
+
+  __extends(SlimeSprite, _super);
+
+  function SlimeSprite() {
+    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
+    this.state_count = 0;
+  }
+
+  SlimeSprite.prototype.update = function(x, y) {
+    var index, prefix;
+    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    if (prefix !== this.last_prefix) {
+      this.state_count = 0;
+    } else {
+      this.state_count++;
+    }
+    this.last_prefix = prefix;
+    index = (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 1;
+        case 3:
+          return 0;
+      }
+    }).call(this);
+    return this.frame = prefix + index;
+  };
+
+  return SlimeSprite;
+
+})(App.Entity.UditorSprite);
+
 var IStairway,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
@@ -1446,7 +1488,7 @@ App.Scene.ObjectBoard = (function(_super) {
         nx = x + Math.random() * _this.map.cell_size;
         ny = y + Math.random() * _this.map.cell_size;
         if (!_this.map.isWall(nx, ny)) {
-          monster = new App.Entity.Monster;
+          monster = new App.Entity.Slime;
           monster.x = nx;
           monster.y = ny;
           return _this.addChild(monster);
@@ -1478,18 +1520,19 @@ App.Skill.MultiShot = (function(_super) {
   }
 
   MultiShot.prototype.exec = function(x, y) {
-    var blur_x, blur_y, bullet, i, move_speed, num, _i, _results;
+    var blur_x, blur_y, bullet, cx, cy, i, move_speed, num, _i, _ref, _results;
     num = 10;
     _results = [];
     for (i = _i = 1; _i <= 3; i = ++_i) {
+      _ref = this.center(), cx = _ref[0], cy = _ref[1];
       blur_x = 4 * (9 * Math.random() - 4);
       blur_y = 4 * (9 * Math.random() - 4);
       move_speed = 16 - Math.random() * 8;
       bullet = new App.Entity.Bullet({
-        rad: Math.atan2(y - this.actor.y + blur_y, x - this.actor.x + blur_x),
+        rad: Math.atan2(y - cy + blur_y, x - cx + blur_x),
         move_speed: move_speed,
-        x: this.actor.x,
-        y: this.actor.y,
+        x: cx,
+        y: cy,
         group_id: this.actor.group_id
       });
       _results.push(this.actor.parentNode.addChild(bullet));

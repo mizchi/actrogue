@@ -42,7 +42,7 @@ class App.Entity.ITracer
     @direction = Math.atan2(dy, dx)
 
   setDestination: (x, y) ->
-    @destination = new Position(x, y)
+    @destination = x:x, y:y
     @direction = Math.atan2(@destination.y - @y, @destination.x - @x)
     @x_speed = Math.cos(@direction) * @move_speed
     @y_speed = Math.sin(@direction) * @move_speed
