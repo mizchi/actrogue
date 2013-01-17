@@ -8,7 +8,7 @@ class App.Entity.Monster extends App.Entity.Mover
 
   onDead: -> # TODO
   hit: ({other}) =>
-    @damage(2)
+    @damage(1  + ~~(Math.random() * 3))
     if @isDead()
       _.each @parentNode?.childNodes, (i) =>
         if i.group_id is other.group_id

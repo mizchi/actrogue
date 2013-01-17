@@ -21,12 +21,25 @@ class App.Entity.Map extends enchant.Sprite
             null
     @layer = []
 
-    map = new ROT.Map.Uniform(@cell_x, @cell_y)
+    # map = new ROT.Map.Uniform(@cell_x, @cell_y)
+    map = new ROT.Map.Cellular(@cell_x, @cell_y)
+    map.randomize(0.4)
     map.create (x, y, val) =>
       @hitmap[x][y] = val
 
   isWall: (x, y) ->
-    !! @hitmap[~~(y / @cell_size)][~~(x / @cell_size)]
+    # !! @hitmap[~~(y / @cell_size)][~~(x / @cell_size)]
+    # if ~~(y / @cell_size) >= @cell_y then return true
+    # !! @hitmap[~~(y / @cell_size)]
+    row = @hitmap[~~(y / @cell_size)]
+    unless row?
+      true
+    else
+      v = row[~~(x / @cell_size)]
+      switch v
+        when 1 then true
+        when undefined then true
+        else false
 
   passable: (x, y) -> not @isWall x, y
 
