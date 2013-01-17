@@ -1361,7 +1361,8 @@ App.Scene.Field = (function(_super) {
     if ((_ref1 = this.minimap) != null) {
       _ref1.remove();
     }
-    this.minimap = new App.UI.MiniMap(this.objectBoard.map);
+    this.minimap = new App.UI.MiniMap(this.objectBoard);
+    this.minimap.x = app.width - this.minimap.width;
     return this.addChild(this.minimap);
   };
 
@@ -1426,7 +1427,7 @@ App.Scene.ObjectBoard = (function(_super) {
 
   ObjectBoard.prototype.createMap = function() {
     var stairdown, stairup, x, y, _ref, _ref1;
-    this.map = new App.Entity.Map(32, 32);
+    this.map = new App.Entity.Map(64, 64);
     this.addChild(this.map);
     _ref = this.map.getRandomPssable(), x = _ref.x, y = _ref.y;
     stairup = new App.Entity.StairwayUp;
@@ -1739,15 +1740,16 @@ App.UI.MiniMap = (function(_super) {
 
   inner_size = 2;
 
-  function MiniMap(map) {
-    this.map = map;
+  function MiniMap(objectBoard) {
     this.enterframe = __bind(this.enterframe, this);
-
+    this.map = objectBoard.map;
     this.cell_x = this.map.cell_x;
     this.cell_y = this.map.cell_y;
     MiniMap.__super__.constructor.call(this, this.cell_x * inner_size, this.cell_y * inner_size);
     this.minimap = this.map.createMiniMapSprite();
     this.addChild(this.minimap);
+    this.width = this.minimap.width;
+    this.height = this.minimap.height;
     this.avatar = new Label('.');
     this.avatar.color = 'blue';
     this.addChild(this.avatar);

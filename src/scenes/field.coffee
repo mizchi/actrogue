@@ -33,9 +33,8 @@ class App.Scene.Field extends enchant.Scene
     @addChild @objectBoard
 
     @minimap?.remove()
-    @minimap = new App.UI.MiniMap @objectBoard.map
-    # p @minimap.x, app.width - @minimap.minimap.width
-    # @minimap.x = app.width - @minimap.width
+    @minimap = new App.UI.MiniMap @objectBoard
+    @minimap.x = app.width - @minimap.width
     @addChild @minimap
 
   nextFloor: =>

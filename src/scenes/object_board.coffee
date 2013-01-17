@@ -15,7 +15,7 @@ class App.Scene.ObjectBoard extends enchant.Group
     @player.y = y
 
   createMap: ->
-    @map = new App.Entity.Map 32,32
+    @map = new App.Entity.Map 64, 64
     @addChild @map
 
     {x, y} = @map.getRandomPssable()
