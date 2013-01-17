@@ -34,14 +34,20 @@ class App.Scene.ObjectBoard extends enchant.Group
     @spawn()
 
   spawn: =>
+    canditates = [
+      App.Entity.Slime
+      App.Entity.Goblin
+    ]
+
     items = _.select @childNodes, (i) -> i instanceof App.Entity.Monster
-    if items.length < 30
+    if items.length < 90
       {x, y} = @map.getRandomPssable()
       add_monster = =>
         nx = x + Math.random() * @map.cell_size
         ny = y + Math.random() * @map.cell_size
         unless @map.isWall(nx, ny)
-          monster = new App.Entity.Slime
+          Monster = canditates[~~(Math.random() * canditates.length)]
+          monster = new Monster
           monster.x = nx
           monster.y = ny
           @addChild monster
@@ -49,4 +55,3 @@ class App.Scene.ObjectBoard extends enchant.Group
           add_monster()
       for i in [1..3]
         add_monster()
-

@@ -96,8 +96,8 @@ class App.Entity.Mover extends enchant.Group
     super
     @group_id = 0
     @direction = 0
-    @move_speed = 1 # 移動速度
-    @sight_range = 50
+    # @move_speed = 1 # 移動速度
+    # @sight_range = 50
     @on 'enterframe', @enterframe
     @draw()
     mixin @,

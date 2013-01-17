@@ -2,10 +2,10 @@ class App.Entity.Player extends App.Entity.Mover
   passable: false
 
   constructor: ->
-    super
-    @group_id = App.Entity.GroupId.Player
     @move_speed = 6
     @sight_range = 1200
+    super
+    @group_id = App.Entity.GroupId.Player
     @skills = [
       new App.Skill.MultiShot(@)
       new App.Skill.SingleShot(@)
@@ -127,16 +127,6 @@ class App.IStoraged
     obj = @_storage[name]
     if obj? then @onLoad JSON.parse obj
     else @onLoad null
-
-class App.Entity.UditorSprite extends enchant.Sprite
-  constructor: (chartip_name) ->
-    image = app.assets[chartip_name]
-    @width = image.width
-    @height = image.height
-    @row = 6
-
-    super image.width / 6, image.height / 4
-    @image = image
 
 class PlayerSprite extends App.Entity.UditorSprite
   constructor: ->

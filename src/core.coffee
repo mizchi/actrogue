@@ -14,14 +14,15 @@ class App.Core extends enchant.Core
     @keybind('B'.charCodeAt(0), 'b')
 
     @preload [
-        "img/chara0.png"
-        'img/roguetile.gif'
-        'img/char/player.png'
-        'img/char/mochi1.png'
-        'img/map0.png'
-        'img/map1.png'
-        'img/Data/CharaChip/[Chara]Civilian_Male_A.png'
-        'img/Data/CharaChip/[Monster]Slime1_pochi.png'
+      "img/chara0.png"
+      'img/roguetile.gif'
+      'img/char/player.png'
+      'img/char/mochi1.png'
+      'img/map0.png'
+      'img/map1.png'
+      'img/Data/CharaChip/[Chara]Civilian_Male_A.png'
+      'img/Data/CharaChip/[Monster]Slime1_pochi.png'
+      'img/Data/CharaChip/[Monster]Goblin1_tapis.png'
     ]
 
     @onload = =>

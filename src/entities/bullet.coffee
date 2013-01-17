@@ -1,12 +1,10 @@
 class App.Entity.Bullet extends App.Entity.Mover
   passable: true
   constructor: ({x, y, rad, move_speed, group_id}) ->
-    @move_speed = move_speed ? 8
-    @sight_range = 0
-
     super
     @x = x
     @y = y
+    @move_speed = move_speed ? 8
     @lifetime = 0.8
     @group_id = group_id ? 0
 
@@ -19,11 +17,13 @@ class App.Entity.Bullet extends App.Entity.Mover
     @move_speed * @lifetime * app.fps
 
   draw: ->
-    @addChild new App.Entity.Circle 0, 0, 4, 'black', 'stroke'
+    circle = new App.Entity.Circle 0, 0, 4, 'black', 'stroke'
+    @addChild circle
 
   isDead: -> @age/app.fps > @lifetime
 
   enterframe: =>
+    super
     unless @goAhead() then @remove()
     if @isDead() then @remove()
 
