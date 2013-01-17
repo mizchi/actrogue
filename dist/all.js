@@ -204,8 +204,6 @@ App.Entity.Circle = (function(_super) {
     Circle.__super__.constructor.apply(this, arguments);
     this.width = this.size;
     this.height = this.size;
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
     this.draw();
   }
 
@@ -418,7 +416,7 @@ App.Core = (function(_super) {
     this.keybind('I'.charCodeAt(0), 'i');
     this.keybind('C'.charCodeAt(0), 'c');
     this.keybind('B'.charCodeAt(0), 'b');
-    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png', 'img/Data/CharaChip/[Chara]Civilian_Male_A.png']);
+    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png', 'img/Data/CharaChip/[Chara]Civilian_Male_A.png', 'img/Data/CharaChip/[Monster]Slime1_pochi.png']);
     this.onload = function() {
       _this.player = new App.Entity.Player;
       return _this.pushScene(new App.Scene.Field(_this.player));
@@ -709,7 +707,7 @@ App.Entity.Map = (function(_super) {
 
 })(enchant.Sprite);
 
-var MochiSprite, Position,
+var Position, SlimeSprite,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -754,7 +752,6 @@ App.Entity.Monster = (function(_super) {
     if (this.isDead()) {
       _.each((_ref = this.parentNode) != null ? _ref.childNodes : void 0, function(i) {
         if (i.group_id === other.group_id) {
-          p('gain exp 1 to ', i.group_id);
           return typeof i.gainExp === "function" ? i.gainExp(1) : void 0;
         }
       });
@@ -816,7 +813,9 @@ App.Entity.Monster = (function(_super) {
   };
 
   Monster.prototype.draw = function() {
-    this.sprite = new MochiSprite;
+    this.sprite = new SlimeSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
     return this.addChild(this.sprite);
   };
 
@@ -828,20 +827,16 @@ App.Entity.Monster = (function(_super) {
 
 })(App.Entity.Mover);
 
-MochiSprite = (function(_super) {
+SlimeSprite = (function(_super) {
 
-  __extends(MochiSprite, _super);
+  __extends(SlimeSprite, _super);
 
-  function MochiSprite() {
-    MochiSprite.__super__.constructor.call(this, 20, 28);
-    this.row = 6;
-    this.image = app.assets['img/char/mochi1.png'];
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
+  function SlimeSprite() {
+    SlimeSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Monster]Slime1_pochi.png');
     this.state_count = 0;
   }
 
-  MochiSprite.prototype.update = function(x, y) {
+  SlimeSprite.prototype.update = function(x, y) {
     var index, prefix;
     prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
     if (prefix !== this.last_prefix) {
@@ -865,9 +860,9 @@ MochiSprite = (function(_super) {
     return this.frame = prefix + index;
   };
 
-  return MochiSprite;
+  return SlimeSprite;
 
-})(enchant.Sprite);
+})(App.Entity.UditorSprite);
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1088,8 +1083,6 @@ PlayerSprite = (function(_super) {
 
   function PlayerSprite() {
     PlayerSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Chara]Civilian_Male_A.png');
-    this.x -= this.width / 2;
-    this.y -= this.height / 2;
     this.state_count = 0;
   }
 

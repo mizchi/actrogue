@@ -3,8 +3,6 @@ class App.Entity.Circle extends enchant.Sprite
     super
     @width = @size
     @height = @size
-    @x -= @width/2
-    @y -= @height/2
     @draw()
 
   draw: ->

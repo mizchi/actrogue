@@ -141,8 +141,6 @@ class App.Entity.UditorSprite extends enchant.Sprite
 class PlayerSprite extends App.Entity.UditorSprite
   constructor: ->
     super 'img/Data/CharaChip/[Chara]Civilian_Male_A.png'
-    @x -= @width/2
-    @y -= @height/2
     @state_count = 0
 
   update: (x, y) ->

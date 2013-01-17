@@ -22,8 +22,6 @@ class App.Entity.Monster extends App.Entity.Mover
     if @isDead()
       _.each @parentNode?.childNodes, (i) =>
         if i.group_id is other.group_id
-
-          p 'gain exp 1 to ', i.group_id
           i.gainExp?(1)
       @remove()
 
@@ -72,19 +70,17 @@ class App.Entity.Monster extends App.Entity.Mover
           @mode = "idle"
 
   draw: ->
-    @sprite = new MochiSprite
+    @sprite = new SlimeSprite
+    @width = @sprite.width
+    @height = @sprite.height
     @addChild @sprite
 
   onMove: (x, y) ->
     @sprite.update x, y
 
-class MochiSprite extends enchant.Sprite
+class SlimeSprite extends App.Entity.UditorSprite
   constructor: ->
-    super 20,28
-    @row = 6
-    @image = app.assets['img/char/mochi1.png']
-    @x -= @width/2
-    @y -= @height/2
+    super 'img/Data/CharaChip/[Monster]Slime1_pochi.png'
     @state_count = 0
 
   update: (x, y) ->
