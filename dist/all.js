@@ -66,26 +66,6 @@ root.mixin = function() {
   return _results;
 };
 
-/*
-class IPoint3d
-  @required:
-    x: Number
-    y: Number
-
-  initialize: ->
-    @z = 0
-
-  getZ: -> @z
-
-class Point
-  constructor: (@x, @y) ->
-    mixin @, IPoint3d
-
-p = new Point
-console.log p.getZ
-*/
-
-
 root.include = function(klass, mixin) {
   return extend(klass.prototype, mixin);
 };
@@ -192,27 +172,23 @@ App.Skill.Base = (function() {
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-App.UI.Dom = (function(_super) {
+App.Entity.UditorSprite = (function(_super) {
 
-  __extends(Dom, _super);
+  __extends(UditorSprite, _super);
 
-  function Dom() {
-    return Dom.__super__.constructor.apply(this, arguments);
+  function UditorSprite(chartip_name) {
+    var image;
+    image = app.assets[chartip_name];
+    this.width = image.width;
+    this.height = image.height;
+    this.row = 6;
+    UditorSprite.__super__.constructor.call(this, image.width / 6, image.height / 4);
+    this.image = image;
   }
 
-  Dom.prototype.css = function(params) {
-    var key, val, _results;
-    _results = [];
-    for (key in params) {
-      val = params[key];
-      _results.push(this._style[key] = val);
-    }
-    return _results;
-  };
+  return UditorSprite;
 
-  return Dom;
-
-})(enchant.Label);
+})(enchant.Sprite);
 
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -442,7 +418,7 @@ App.Core = (function(_super) {
     this.keybind('I'.charCodeAt(0), 'i');
     this.keybind('C'.charCodeAt(0), 'c');
     this.keybind('B'.charCodeAt(0), 'b');
-    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png']);
+    this.preload(["img/chara0.png", 'img/roguetile.gif', 'img/char/player.png', 'img/char/mochi1.png', 'img/map0.png', 'img/map1.png', 'img/Data/CharaChip/[Chara]Civilian_Male_A.png']);
     this.onload = function() {
       _this.player = new App.Entity.Player;
       return _this.pushScene(new App.Scene.Field(_this.player));
@@ -1009,6 +985,8 @@ App.Entity.Player = (function(_super) {
 
   Player.prototype.draw = function() {
     this.sprite = new PlayerSprite;
+    this.width = this.sprite.width;
+    this.height = this.sprite.height;
     return this.addChild(this.sprite);
   };
 
@@ -1086,14 +1064,30 @@ App.IStoraged = (function() {
 
 })();
 
+App.Entity.UditorSprite = (function(_super) {
+
+  __extends(UditorSprite, _super);
+
+  function UditorSprite(chartip_name) {
+    var image;
+    image = app.assets[chartip_name];
+    this.width = image.width;
+    this.height = image.height;
+    this.row = 6;
+    UditorSprite.__super__.constructor.call(this, image.width / 6, image.height / 4);
+    this.image = image;
+  }
+
+  return UditorSprite;
+
+})(enchant.Sprite);
+
 PlayerSprite = (function(_super) {
 
   __extends(PlayerSprite, _super);
 
   function PlayerSprite() {
-    PlayerSprite.__super__.constructor.call(this, 32, 32);
-    this.row = 3;
-    this.image = app.assets['img/char/player.png'];
+    PlayerSprite.__super__.constructor.call(this, 'img/Data/CharaChip/[Chara]Civilian_Male_A.png');
     this.x -= this.width / 2;
     this.y -= this.height / 2;
     this.state_count = 0;
@@ -1101,31 +1095,32 @@ PlayerSprite = (function(_super) {
 
   PlayerSprite.prototype.update = function(x, y) {
     var index, prefix;
-    prefix = this.row * (y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    index = 1;
+    prefix = this.row * (x && y ? (index += 3, x < 0 && y > 0 ? 0 : x > 0 && y > 0 ? 1 : x < 0 && y < 0 ? 2 : x > 0 && y < 0 ? 3 : void 0) : y > 0 ? 0 : x < 0 ? 1 : x > 0 ? 2 : y < 0 ? 3 : void 0);
+    index += (function() {
+      switch (~~(this.state_count / 5) % 4) {
+        case 0:
+          return 0;
+        case 1:
+          return +1;
+        case 2:
+          return 0;
+        case 3:
+          return -1;
+      }
+    }).call(this);
     if (prefix !== this.last_prefix) {
       this.state_count = 0;
     } else {
       this.state_count++;
     }
     this.last_prefix = prefix;
-    index = (function() {
-      switch (~~(this.state_count / 5) % 4) {
-        case 0:
-          return 1;
-        case 1:
-          return 2;
-        case 2:
-          return 1;
-        case 3:
-          return 0;
-      }
-    }).call(this);
     return this.frame = prefix + index;
   };
 
   return PlayerSprite;
 
-})(enchant.Sprite);
+})(App.Entity.UditorSprite);
 
 
 App.Entity.ISkillSelector = (function() {
@@ -1541,79 +1536,36 @@ App.Skill.SingleShot = (function(_super) {
 
 })(App.Skill.Base);
 
-var HPLabel,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
+var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-HPLabel = (function(_super) {
+App.Skill.Slash = (function(_super) {
 
-  __extends(HPLabel, _super);
+  __extends(Slash, _super);
 
-  function HPLabel(player) {
-    this.player = player;
-    this.enterframe = __bind(this.enterframe, this);
-
-    HPLabel.__super__.constructor.call(this);
-    this.css({
-      color: 'white'
-    });
-    this.width = app.width * 1;
-    this.height = app.height * 0.1;
-    this.backgroundColor = 'black';
-    this.$el = $(this._element);
-    this.on('enterframe', this.enterframe);
-    this.template = Handlebars.compile("<div>\n  Lv:<span style='color:red'>{{player.lv}}</span>\n  ({{player.exp}}/{{next_level_exp}})\n  HP:{{player.hp}}/{{player.max_hp}}\n  STR:{{player.status.str}} INT:{{player.status.int}} DEX: {{player.status.dex}}\n</div>\n<div> {{skill.constructor.name}} Lv.{{skill.lv}} </div>");
+  function Slash() {
+    return Slash.__super__.constructor.apply(this, arguments);
   }
 
-  HPLabel.prototype.enterframe = function() {
-    var skill, skills;
-    skill = this.player.selected_skill();
-    this.text = this.template({
-      player: this.player,
-      skill: this.player.selected_skill(),
-      next_level_exp: this.player.next_level_exp()
+  Slash.prototype.exec = function(x, y) {
+    var bullet, move_speed;
+    move_speed = 16;
+    bullet = new App.Entity.Bullet({
+      rad: Math.atan2(y - this.actor.y, x - this.actor.x),
+      move_speed: move_speed,
+      x: this.actor.x,
+      y: this.actor.y,
+      group_id: this.group_id
     });
-    return skills = (function() {
-      var _i, _len, _ref, _results;
-      _ref = this.player.skills;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        skill = _ref[_i];
-        _results.push(p.constructor.name);
-      }
-      return _results;
-    }).call(this);
+    return this.actor.parentNode.addChild(bullet);
   };
 
-  return HPLabel;
+  return Slash;
 
-})(App.UI.Dom);
+})(App.Skill.Base);
 
-App.UI.Main = (function(_super) {
-
-  __extends(Main, _super);
-
-  function Main(player) {
-    var hp_label;
-    this.player = player;
-    Main.__super__.constructor.apply(this, arguments);
-    this.x = 0;
-    this.y = 0;
-    hp_label = new HPLabel(this.player);
-    hp_label.x = 0;
-    hp_label.y = app.height - hp_label.height;
-    this.addChild(hp_label);
-  }
-
-  return Main;
-
-})(enchant.DomLayer);
-
-var HPLabel,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 App.UI.Dom = (function(_super) {
 
@@ -1636,6 +1588,11 @@ App.UI.Dom = (function(_super) {
   return Dom;
 
 })(enchant.Label);
+
+var HPLabel,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 HPLabel = (function(_super) {
 

@@ -2,7 +2,6 @@
 
 - 近接攻撃
 - ウディタ素材に入れ替え
-- github pages
 
 * DONE
 
@@ -10,3 +9,4 @@
 - next floor
 - wasd移動で照準
 - ミニマップで自分の位置が光る
+- github pages

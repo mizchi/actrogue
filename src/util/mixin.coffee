@@ -28,24 +28,6 @@ root.mixin = (ctx, Infs...) ->
     if I.required? and debug
       checkRequired(ctx, I)
     I::initialize?.apply(ctx)
-###
-class IPoint3d
-  @required:
-    x: Number
-    y: Number
-
-  initialize: ->
-    @z = 0
-
-  getZ: -> @z
-
-class Point
-  constructor: (@x, @y) ->
-    mixin @, IPoint3d
-
-p = new Point
-console.log p.getZ
-###
 
 root.include = (klass, mixin) ->
   extend klass.prototype, mixin

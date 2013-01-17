@@ -20,6 +20,7 @@ class App.Core extends enchant.Core
         'img/char/mochi1.png'
         'img/map0.png'
         'img/map1.png'
+        'img/Data/CharaChip/[Chara]Civilian_Male_A.png'
     ]
 
     @onload = =>

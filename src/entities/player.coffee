@@ -10,6 +10,7 @@ class App.Entity.Player extends App.Entity.Mover
       new App.Skill.MultiShot(@)
       new App.Skill.SingleShot(@)
     ]
+
     mixin @, App.Entity.ISkillSelector
     @on 'fire', @fire
 
@@ -73,6 +74,8 @@ class App.Entity.Player extends App.Entity.Mover
 
   draw: ->
     @sprite = new PlayerSprite
+    @width = @sprite.width
+    @height = @sprite.height
     @addChild @sprite
 
   enterframe: =>
@@ -125,34 +128,48 @@ class App.IStoraged
     if obj? then @onLoad JSON.parse obj
     else @onLoad null
 
+class App.Entity.UditorSprite extends enchant.Sprite
+  constructor: (chartip_name) ->
+    image = app.assets[chartip_name]
+    @width = image.width
+    @height = image.height
+    @row = 6
 
-class PlayerSprite extends enchant.Sprite
+    super image.width / 6, image.height / 4
+    @image = image
+
+class PlayerSprite extends App.Entity.UditorSprite
   constructor: ->
-    super 32,32
-    @row = 3
-
-    @image = app.assets['img/char/player.png']
+    super 'img/Data/CharaChip/[Chara]Civilian_Male_A.png'
     @x -= @width/2
     @y -= @height/2
     @state_count = 0
 
   update: (x, y) ->
+    index = 1
     prefix = @row *
-      if y > 0 then 0
-      else if x < 0 then 1
-      else if x > 0 then 2
-      else if y < 0 then 3
+      if x and y
+        index += 3
+        if x < 0 and y > 0 then 0
+        else if x > 0 and y > 0 then 1
+        else if x < 0 and y < 0 then 2
+        else if x > 0 and y < 0 then 3
+      else
+        if y > 0 then 0
+        else if x < 0 then 1
+        else if x > 0 then 2
+        else if y < 0 then 3
+    index +=
+      switch ~~(@state_count/5)%4
+        when 0 then 0
+        when 1 then +1
+        when 2 then 0
+        when 3 then -1
 
+    # 前回から更新されたか
     if prefix isnt @last_prefix
       @state_count = 0
     else
       @state_count++
     @last_prefix = prefix
-
-    index =
-      switch ~~(@state_count/5)%4
-        when 0 then 1
-        when 1 then 2
-        when 2 then 1
-        when 3 then 0
     @frame = prefix + index
